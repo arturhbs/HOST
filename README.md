@@ -24,7 +24,7 @@ $ cd MQTT-python
 Obs: Get inside the codes at app directory and confirm if the host ip is correct
 
 ### 3- Running code with docker 
-Execute command below to get
+Execute commands below to run publish's code and subscribe's code, respectively:
 
 ```
 $ docker run -d --name pub -v $(pwd)/app/publish.py:/app/code.py arturhbs/mqtt-python
@@ -44,4 +44,3 @@ Or use follow command to see subscribe's debug
 ```
 $ docker logs -f sub
 ```
-$ docker run -d --name sub  -v $(pwd)/app/subscribe.py:/app/code.py arturhbs/mqtt-python
