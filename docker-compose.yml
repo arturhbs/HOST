@@ -10,7 +10,9 @@ services:
         working_dir: /app
         command:  ./pub.sh
         networks:
-            - publisherNet    
+            - publisherNet
+        depends_on: 
+            - subscriber        
     subscriber:
         image: python:3.7-alpine
         volumes: 
