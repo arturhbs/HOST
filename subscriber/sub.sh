@@ -1,5 +1,7 @@
 #!/bin/sh
 
-apk add install mosquitto 
-apk add mosquitto-clients
+
+pip install paho-mqtt
+pip install -U setuptools
+pip install matplotlib
 python -u sub.py
