@@ -1,10 +1,9 @@
-import paho.mqtt.client as mqtt
+import sys
 import time
+import json
+import paho.mqtt.client as mqtt
 import matplotlib.pyplot as plt
 
-host_ip = '172.17.0.1'
-port = 1883
-keepalive = 200
 take_time = []
 take_count = []
 
@@ -31,7 +30,7 @@ def read_message(topic,msg):
 
 def check_valeus(take_time, take_count):
     print(len(take_count))
-    if len(take_count) == 10:
+    if len(take_count)%10 == 0:
         print("Entrou no if")
         graphic(take_count)
 
@@ -40,12 +39,22 @@ def graphic(take_count):
     plt.hist(take_count, bins = 10)
     plt.ylabel('Numbers')
     plt.savefig('../data/count.png')
-    
 
+def Read_Config_File(args):
+    with open(args[1], 'r') as file:
+        config = json.load(file)
+    return config['subscriber']
 
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
-client.connect(host_ip, port, keepalive)
-client.loop_forever()
+def main(args):
+    # Read config file passed as argument
+    config = Read_Config_File(args)
+    # Connection with client paho.mqtt api  
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect(config['hostIP'], config['port'], config['keepAlive'])
+    client.loop_forever()
 
+if __name__ == "__main__":
+    args = sys.argv 
+    main(args)
