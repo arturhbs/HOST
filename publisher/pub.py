@@ -1,8 +1,7 @@
-# if use perf_counter will calculate time with sleep time 
 import sys
 import json
 import time
-from time import process_time, perf_counter
+from time import process_time, perf_counter # if use perf_counter will calculate time with sleep time 
 import paho.mqtt.client as mqtt
 
 def Count_Message(client):

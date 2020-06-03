@@ -25,19 +25,27 @@ def read_message(topic,msg):
     if topic == 'time':
         take_time.append(msg)
     if topic == 'count':
-        take_count.append(msg)    
-    check_valeus(take_time, take_count)
+        take_count.append(msg)
+    lastTopic = topic    
+    check_valeus(take_time, take_count, lastTopic)
 
-def check_valeus(take_time, take_count):
-    print(len(take_count))
-    if len(take_count)%10 == 0:
-        print("Entrou no if")
-        graphic(take_count)
+def check_valeus(take_time, take_count, lastTopic):
+    print(len(take_time))
+    if len(take_time)%5 == 0 and lastTopic == 'time':
+        axY = []
+        for i in range(len(take_time)):
+            axY.append(i+1)
+        axX = take_time
+        graphic(axY,axX)
 
-def graphic(take_count):
-    print('Entrou na função graph')
-    plt.hist(take_count, bins = 10)
-    plt.ylabel('Numbers')
+def graphic(Y,X):
+    
+    for i, v in enumerate(X):
+        plt.text(i , v+1 , str(round(v,2)), fontweight='bold')
+    plt.bar(Y, X)
+    plt.title('Time process per publisher')
+    plt.ylabel('Time')    
+    plt.xlabel('Quantity of topics')
     plt.savefig('../data/count.png')
 
 def Read_Config_File(args):
