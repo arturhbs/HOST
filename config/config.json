@@ -1,0 +1,12 @@
+{
+    "publisher":{
+        "hostIP": "172.17.0.1",
+        "port": 1883,  
+        "keepAlive": 20
+    },
+    "subscriber":{
+        "hostIP": "172.17.0.1",
+        "port": 1883,
+        "keepAlive": 200
+    }
+}

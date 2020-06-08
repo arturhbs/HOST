@@ -21,26 +21,27 @@ $ git clone https://github.com/arturhbs/MQTT-python.git
 $ cd MQTT-python
 ```
 
-Obs: Get inside the codes at app directory and confirm if the host ip is correct
-
 ### 3- Running code with docker 
-Execute commands below to run publish's code and subscribe's code, respectively:
+Execute commands below to run publish's and subscribe's code, respectively:
 
 ```
-$ docker run -d --name pub -v $(pwd)/app/publish.py:/app/code.py arturhbs/mqtt-python
+$ docker-compose up -d --scale publisher=5 --scale subscriber=2
 ```
+
+It is possible to change the number of how many services it will work as your wish.
+
+If need to run more than 20 services simultaneously and it gets an error, it is recommended to try:
+
 ```
-$ docker run -d --name sub -v $(pwd)/app/subscribe.py:/app/code.py arturhbs/mqtt-python
+export DOCKER_CLIENT_TIMEOUT=120
+export COMPOSE_HTTP_TIMEOUT=120
 ```
+
+Other solution is to restart Docker and increase Docker CPU and memory
 
 ## Debug mode
 For access debug mode run follow code to see publisher's debug:
 
 ```
-$ docker logs -f pub
-```
-Or use follow command to see subscribe's debug
-
-```
-$ docker logs -f sub
+$ docker-compose logs -f 
 ```
