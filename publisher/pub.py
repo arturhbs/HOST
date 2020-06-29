@@ -10,7 +10,7 @@ def Count_Message(client):
         time.sleep(1)
         i+=1
         message=str(i)
-        if i <=10:
+        if i <=5:
             client.publish('count',message)
         else:
             break
@@ -38,5 +38,6 @@ def main(args):
     print("Time in seconds: ", timeTotal)
 
 if __name__ == "__main__":
+    time.sleep(40)
     args = sys.argv 
     main(args)    
