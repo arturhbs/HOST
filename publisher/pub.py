@@ -5,6 +5,12 @@ from time import process_time, perf_counter # if use perf_counter will calculate
 import paho.mqtt.client as mqtt
 import psutil
 
+cpuTimeArray = []
+cpuTimePIDArray = []
+memVirtualArray = []
+memInfoArray = []
+diskUsageArray = []
+
 def count_publications(client):
     count_message(8, client)
     count_message(13,client)
@@ -14,14 +20,8 @@ def count_publications(client):
 
 def count_message(quantity, client):
     i=0
-    timeStart = perf_counter()
-    cpuTime = psutil.cpu_times()
-    print('start_time: ')
-    print(timeStart)
-    print('\nCPU_Time: ')
-    print(cpuTime)
-    print('\n\n####################################')
     while True:
+        declare_metrics()
         time.sleep(1)
         i+=1
         message=str(i)
@@ -30,13 +30,27 @@ def count_message(quantity, client):
         else:
             break
     timeEnd = perf_counter()
-    timeTotal = timeEnd - timeStart
-    client.publish('time',timeTotal)
 
 def read_config_file(args):
     with open(args[1], 'r') as file:
         config = json.load(file)
     return config['publisher']
+
+def declare_metrics():
+    p = psutil.Process()
+    cpuTime = psutil.cpu_times()
+    cpuTimeArray.append(cpuTime)
+    cpuTimePID = p.cpu_times()
+    cpuTimePIDArray.append(cpuTimePIDArray)
+    memVirtual = psutil.virtual_memory()
+    memVirtualArray.append(memVirtual)
+    memInfo = p.memory_info()
+    memInfoArray.append(memInfo)
+    diskUsage = psutil.disk_usage('../')
+    diskUsageArray.append(diskUsage)
+    print("CPU TIME PID ARRAY :")
+    print(cpuTimeArray)
+    return cpuTime, cpuTimePID, memVirtual, memInfo, diskUsage
 
 def main(args):
     # Read config file passed as argument
@@ -44,20 +58,20 @@ def main(args):
     # Connection with client paho.mqtt api
     client = mqtt.Client()
     client.connect(config['hostIP'], config['port'], config['keepAlive'])
+    # Declaring all metrics
+    timeStart = perf_counter()
+    declare_metrics()
     # Metrics about quantity of publications
-    count_publications(client)
+    timeEnd = count_publications(10,client)
+
+    timeTotal = timeEnd - timeStart
+    client.publish('time',timeTotal)
     # End client mqtt
+    
+    print('\n\n####################################')
     client.disconnect()
 
 if __name__ == "__main__":
-    cpuTime = psutil.cpu_times()
-    print('\nCPU_Time: ')
-    print(cpuTime)
-    print('\n\n####################################')
-    time.sleep(40)
-    cpuTime = psutil.cpu_times()
-    print('\nCPU_Time: ')
-    print(cpuTime)
-    print('\n\n####################################')
+    time.sleep(4)
     args = sys.argv 
     main(args)    
