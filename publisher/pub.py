@@ -4,22 +4,25 @@ import time
 from time import process_time, perf_counter # if use perf_counter will calculate time with sleep time 
 import paho.mqtt.client as mqtt
 import psutil
+import numpy as np
 
-cpuTimeArray = []
-cpuTimePIDArray = []
-memVirtualArray = []
-memInfoArray = []
-diskUsageArray = []
+cpuTimeArray = np.empty()
+cpuTimePIDArray = np.empty()
+memVirtualArray = np.empty()
+memInfoArray = np.empty()
+diskUsageArray = np.empty()
 
+# Initialize constants
 def reset_constants_arrays():
     cpuTimeArray = []
     cpuTimePIDArray = []
     memVirtualArray = []
     memInfoArray = []
     diskUsageArray = []
+
 # take the first and last value to see the range of metrics returned
 def first_last_value_metric():
-    dictFirstLastValues = {'cpuTimeArray':[] 'cpuTimePIDArray':[]  'memVirtualArray':[]  'memInfoArray':[] 'diskUsageArray':[]}
+    dictFirstLastValues = {'cpuTimeArray':[], 'cpuTimePIDArray':[],  'memVirtualArray':[],  'memInfoArray':[], 'diskUsageArray':[]}
     cpuTimeArray.sort()
     dictFirstLastValues['cpuTimeArray'].append(cpuTimeArray[0])
     dictFirstLastValues['cpuTimeArray'].append(cpuTimeArray[-1])
@@ -37,9 +40,23 @@ def first_last_value_metric():
     dictFirstLastValues['diskUsageArray'].append(diskUsageArray[-1])
 
     return dictFirstLastValues
+
 # Take the average from values caught in metrics
 def average_metrics():
+    dictAverageMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
+    
+    dictAverageMetrics['cpuTimeArray'] = (cpuTimeArray.average())
+    cpuTimePIDArray.average()
+    dictAverageMetrics['cpuTimePIDArray'] = (cpuTimePIDArray.average())
+    memVirtualArray.average()
+    dictAverageMetrics['memVirtualArray'] = (memVirtualArray.average())
+    memInfoArray.average()
+    dictAverageMetrics['memInfoArray'] = (memInfoArray.average())
+    diskUsageArray.average()
+    dictAverageMetrics['diskUsageArray'] = (diskUsageArray.average())
 
+    return dictAverageMetrics
+    
 # Sent value of quantity publications for the graph
 def count_publications(client):
     count_message(8, client)
@@ -70,6 +87,7 @@ def count_message(quantity, client):
     timeTotal = timeEnd - timeStart
     client.publish('time',timeTotal)
 
+# Read config file that user can modify 
 def read_config_file(args):
     with open(args[1], 'r') as file:
         config = json.load(file)
