@@ -11,15 +11,50 @@ memVirtualArray = []
 memInfoArray = []
 diskUsageArray = []
 
+def reset_constants_arrays():
+    cpuTimeArray = []
+    cpuTimePIDArray = []
+    memVirtualArray = []
+    memInfoArray = []
+    diskUsageArray = []
+# take the first and last value to see the range of metrics returned
+def first_last_value_metric():
+    dictFirstLastValues = {'cpuTimeArray':[] 'cpuTimePIDArray':[]  'memVirtualArray':[]  'memInfoArray':[] 'diskUsageArray':[]}
+    cpuTimeArray.sort()
+    dictFirstLastValues['cpuTimeArray'].append(cpuTimeArray[0])
+    dictFirstLastValues['cpuTimeArray'].append(cpuTimeArray[-1])
+    cpuTimePIDArray.sort()
+    dictFirstLastValues['cpuTimePIDArray'].append(cpuTimePIDArray[0])
+    dictFirstLastValues['cpuTimePIDArray'].append(cpuTimePIDArray[-1])
+    memVirtualArray.sort()
+    dictFirstLastValues['memVirtualArray'].append(memVirtualArray[0])
+    dictFirstLastValues['memVirtualArray'].append(memVirtualArray[-1])
+    memInfoArray.sort()
+    dictFirstLastValues['memInfoArray'].append(memInfoArray[0])
+    dictFirstLastValues['memInfoArray'].append(memInfoArray[-1])
+    diskUsageArray.sort()
+    dictFirstLastValues['diskUsageArray'].append(diskUsageArray[0])
+    dictFirstLastValues['diskUsageArray'].append(diskUsageArray[-1])
+
+    return dictFirstLastValues
+# Take the average from values caught in metrics
+def average_metrics():
+
+# Sent value of quantity publications for the graph
 def count_publications(client):
     count_message(8, client)
+    reset_constants_arrays()
     count_message(13,client)
+    reset_constants_arrays()
     count_message(21,client)
+    reset_constants_arrays()
     count_message(34,client)
+    reset_constants_arrays()
     count_message(55,client)
 
 def count_message(quantity, client):
     i=0
+    timeStart = perf_counter()
     while True:
         declare_metrics()
         time.sleep(1)
@@ -29,7 +64,11 @@ def count_message(quantity, client):
             client.publish('count',message)
         else:
             break
+    first, last = first_last_value_metric()
+    average_metrics()        
     timeEnd = perf_counter()
+    timeTotal = timeEnd - timeStart
+    client.publish('time',timeTotal)
 
 def read_config_file(args):
     with open(args[1], 'r') as file:
@@ -50,7 +89,6 @@ def declare_metrics():
     diskUsageArray.append(diskUsage)
     print("CPU TIME PID ARRAY :")
     print(cpuTimeArray)
-    return cpuTime, cpuTimePID, memVirtual, memInfo, diskUsage
 
 def main(args):
     # Read config file passed as argument
@@ -59,13 +97,10 @@ def main(args):
     client = mqtt.Client()
     client.connect(config['hostIP'], config['port'], config['keepAlive'])
     # Declaring all metrics
-    timeStart = perf_counter()
     declare_metrics()
     # Metrics about quantity of publications
-    timeEnd = count_publications(10,client)
+    count_publications(client)
 
-    timeTotal = timeEnd - timeStart
-    client.publish('time',timeTotal)
     # End client mqtt
     
     print('\n\n####################################')
