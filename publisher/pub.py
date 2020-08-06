@@ -38,25 +38,15 @@ def get_lowest_highest_metrics_values():
     diskUsageArray.sort()
     dictFirstLastValues['diskUsageArray'].append(diskUsageArray[0])
     dictFirstLastValues['diskUsageArray'].append(diskUsageArray[-1])
-
-    print('\nDICT first and last METRICS CPUTIME:')
-    print(dictFirstLastValues['cpuTimeArray'])
-    print('\nDICT first and last METRICS CPUTIMEPID : ')
-    print(dictFirstLastValues['cpuTimePIDArray'])
-    print('\nDICT first and last METRICS MEMVIRTUAL: ')
-    print(dictFirstLastValues['memVirtualArray'])
-    print('\nDICT first and last METRICS MEMINFO : ')
-    print(dictFirstLastValues['memInfoArray'])
-    print('\nDICT first and last METRICS DISKUSAGE : ')
-    print(dictFirstLastValues['diskUsageArray'])
-   
+    print('\n\nDICT FIRST AND LAST METRICS : ')
+    print(dictFirstLastValues)
     return dictFirstLastValues
 
 # Take the average from values caught in metrics
 def get_average_metrics_values():
     dictAverageMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
     dictAverageMetrics['cpuTimeArray'] = statistics.mean(cpuTimeArray)
-    # dictAverageMetrics['cpuTimePIDArray'] = statistics.mean(cpuTimePIDArray)
+    dictAverageMetrics['cpuTimePIDArray'] = statistics.mean(cpuTimePIDArray)
     dictAverageMetrics['memVirtualArray'] = statistics.mean(memVirtualArray)
     dictAverageMetrics['memInfoArray'] = statistics.mean(memInfoArray)
     dictAverageMetrics['diskUsageArray'] = statistics.mean(diskUsageArray)
@@ -64,46 +54,20 @@ def get_average_metrics_values():
     print(dictAverageMetrics)
     return dictAverageMetrics
     
-# Sent value of quantity publications for the graph
-def count_publications(client):
-    count_message(8, client)
-    get_lowest_highest_metrics_values()
-    get_average_metrics_values()
-    reset_constants_arrays()
-    count_message(13,client)
-    reset_constants_arrays()
-    count_message(21,client)
-    reset_constants_arrays()
-    count_message(34,client)
-    reset_constants_arrays()
-    count_message(55,client)
-
-def count_message(quantity, client):
-    i=0
-    timeStart = perf_counter()
-    while True:
-        get_metrics()
-        time.sleep(1)
-        i+=1
-        message=str(i)
-        if i <=quantity:
-            client.publish('count',message)
-        else:
-            break
-    timeEnd = perf_counter()
-    timeTotal = timeEnd - timeStart
-    client.publish('time',timeTotal)
-
 # Get all metrics
 def get_metrics():
     p = psutil.Process()
-    #cpu_time = Return system CPU times as a named tuple. Every attribute represents the seconds the CPU has spent in the given mode;
+    # CPU time of all computer;
+    # cpu_time = Return system CPU times as a named tuple. Every attribute represents the seconds the CPU has spent in the given mode;
     # [0]=user; [1]=system; [2]=idle;
     cpuTime = psutil.cpu_times()
     cpuTimeArray.append(cpuTime[0]+cpuTime[1]+cpuTime[2])
 
+    # CPU time of the specific process;
+    #user: time spent in user mode; system: time spent in kernel mode.
+    # [0]=user; [1]=system;
     cpuTimePID = p.cpu_times()
-    cpuTimePIDArray.append(cpuTimePIDArray)
+    cpuTimePIDArray.append(cpuTimePID[0]+cpuTimePID[1])
     
     #memVirtual = append the virtual memory (not just the process like in memInfo, but all computer); 
     # [0]=total;[1]=available;[2]=percent;[3]=used;[4]=used;[5]=free;....
@@ -119,6 +83,37 @@ def get_metrics():
     # [0] = total ; [1]=used; [2]=free,[4]=percent
     diskUsage = psutil.disk_usage('../')
     diskUsageArray.append(diskUsage[1])
+
+# Sent value of quantity publications for the graph
+def count_publications(client):
+    count_message(8, client)
+    get_lowest_highest_metrics_values()
+    get_average_metrics_values()
+    reset_constants_arrays()
+    count_message(13,client)
+    reset_constants_arrays()
+    count_message(21,client)
+    reset_constants_arrays()
+    count_message(34,client)
+    reset_constants_arrays()
+    count_message(55,client)
+
+# Running code
+def count_message(quantity, client):
+    i=0
+    timeStart = perf_counter()
+    while True:
+        get_metrics()
+        time.sleep(1)
+        i+=1
+        message=str(i)
+        if i <=quantity:
+            client.publish('count',message)
+        else:
+            break
+    timeEnd = perf_counter()
+    timeTotal = timeEnd - timeStart
+    client.publish('time',timeTotal)
 
 # Read config file that user can modify 
 def read_config_file(args):
