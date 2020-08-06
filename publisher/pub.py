@@ -39,15 +39,15 @@ def get_lowest_highest_metrics_values():
     dictFirstLastValues['diskUsageArray'].append(diskUsageArray[0])
     dictFirstLastValues['diskUsageArray'].append(diskUsageArray[-1])
 
-    print('\nDICT first and last METRICS :')
+    print('\nDICT first and last METRICS CPUTIME:')
     print(dictFirstLastValues['cpuTimeArray'])
-    print('\nDICT first and last METRICS : ')
+    print('\nDICT first and last METRICS CPUTIMEPID : ')
     print(dictFirstLastValues['cpuTimePIDArray'])
-    print('\nDICT first and last METRICS : ')
+    print('\nDICT first and last METRICS MEMVIRTUAL: ')
     print(dictFirstLastValues['memVirtualArray'])
-    print('\nDICT first and last METRICS : ')
+    print('\nDICT first and last METRICS MEMINFO : ')
     print(dictFirstLastValues['memInfoArray'])
-    print('\nDICT first and last METRICS : ')
+    print('\nDICT first and last METRICS DISKUSAGE : ')
     print(dictFirstLastValues['diskUsageArray'])
    
     return dictFirstLastValues
@@ -58,7 +58,7 @@ def get_average_metrics_values():
     dictAverageMetrics['cpuTimeArray'] = statistics.mean(cpuTimeArray)
     # dictAverageMetrics['cpuTimePIDArray'] = statistics.mean(cpuTimePIDArray)
     dictAverageMetrics['memVirtualArray'] = statistics.mean(memVirtualArray)
-    # dictAverageMetrics['memInfoArray'] = statistics.mean(memInfoArray)
+    dictAverageMetrics['memInfoArray'] = statistics.mean(memInfoArray)
     dictAverageMetrics['diskUsageArray'] = statistics.mean(diskUsageArray)
     print('\n\nDICT AVERAGE METRICS : ')
     print(dictAverageMetrics)
@@ -105,13 +105,16 @@ def get_metrics():
     cpuTimePID = p.cpu_times()
     cpuTimePIDArray.append(cpuTimePIDArray)
     
-    #memVirtual = append the virtual memory; 
+    #memVirtual = append the virtual memory (not just the process like in memInfo, but all computer); 
     # [0]=total;[1]=available;[2]=percent;[3]=used;[4]=used;[5]=free;....
     memVirtual = psutil.virtual_memory()
     memVirtualArray.append(memVirtual[3])
 
+    # rss: aka “Resident Set Size”, this is the non-swapped physical memory a process has used. On UNIX it matches “top“‘s RES column). On Windows this is an alias for wset field and it matches “Mem Usage” column of taskmgr.exe.
+    # vms: aka “Virtual Memory Size”, this is the total amount of virtual memory used by the process. On UNIX it matches “top“‘s VIRT column. On Windows this is an alias for pagefile field and it matches “Mem Usage” “VM Size” column of taskmgr.exe.
+    # [0]=rss; [1]=vms
     memInfo = p.memory_info()
-    memInfoArray.append(memInfo)
+    memInfoArray.append(memInfo[0]+ memInfo[1])
     # diskUsage = append the used disk value; 
     # [0] = total ; [1]=used; [2]=free,[4]=percent
     diskUsage = psutil.disk_usage('../')
