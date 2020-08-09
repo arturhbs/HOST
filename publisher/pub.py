@@ -23,23 +23,27 @@ def reset_constants_arrays():
 # take the lowest and highest value to see the range of metrics returned
 def get_lowest_highest_metrics_values():
     dictFirstLastValues = {'cpuTimeArray':[], 'cpuTimePIDArray':[],  'memVirtualArray':[],  'memInfoArray':[], 'diskUsageArray':[]}
+    
     cpuTimeArray.sort()
     dictFirstLastValues['cpuTimeArray'].append(cpuTimeArray[0])
     dictFirstLastValues['cpuTimeArray'].append(cpuTimeArray[-1])
+    
     cpuTimePIDArray.sort()
     dictFirstLastValues['cpuTimePIDArray'].append(cpuTimePIDArray[0])
     dictFirstLastValues['cpuTimePIDArray'].append(cpuTimePIDArray[-1])
+    
     memVirtualArray.sort()
     dictFirstLastValues['memVirtualArray'].append(memVirtualArray[0])
     dictFirstLastValues['memVirtualArray'].append(memVirtualArray[-1])
+    
     memInfoArray.sort()
     dictFirstLastValues['memInfoArray'].append(memInfoArray[0])
     dictFirstLastValues['memInfoArray'].append(memInfoArray[-1])
+    
     diskUsageArray.sort()
     dictFirstLastValues['diskUsageArray'].append(diskUsageArray[0])
     dictFirstLastValues['diskUsageArray'].append(diskUsageArray[-1])
-    print('\n\nDICT FIRST AND LAST METRICS : ')
-    print(dictFirstLastValues)
+   
     return dictFirstLastValues
 
 # Take the average from values caught in metrics
@@ -50,8 +54,7 @@ def get_average_metrics_values():
     dictAverageMetrics['memVirtualArray'] = statistics.mean(memVirtualArray)
     dictAverageMetrics['memInfoArray'] = statistics.mean(memInfoArray)
     dictAverageMetrics['diskUsageArray'] = statistics.mean(diskUsageArray)
-    print('\n\nDICT AVERAGE METRICS : ')
-    print(dictAverageMetrics)
+    
     return dictAverageMetrics
     
 # Get all metrics
@@ -79,26 +82,57 @@ def get_metrics():
     # [0]=rss; [1]=vms
     memInfo = p.memory_info()
     memInfoArray.append(memInfo[0]+ memInfo[1])
+    
     # diskUsage = append the used disk value; 
     # [0] = total ; [1]=used; [2]=free,[4]=percent
     diskUsage = psutil.disk_usage('../')
     diskUsageArray.append(diskUsage[1])
 
-# Sent value of quantity publications for the graph
-def count_publications(client):
-    count_message(8, client)
-    get_lowest_highest_metrics_values()
-    get_average_metrics_values()
-    reset_constants_arrays()
-    count_message(13,client)
-    reset_constants_arrays()
-    count_message(21,client)
-    reset_constants_arrays()
-    count_message(34,client)
-    reset_constants_arrays()
-    count_message(55,client)
+# Send all metrics to subscribe
+def send_metrics(lowerHighestMetrics, averageMetrics,client):
 
-# Running code
+    # Send cpuTime metric
+    client.publish('cpuTime_lowerMetric',lowerHighestMetrics['cpuTimeArray'][0])
+    client.publish('cpuTime_highestMetric',lowerHighestMetrics['cpuTimeArray'][1])
+    client.publish('cpuTime_averageMetric', averageMetrics['cpuTimeArray'])
+
+    # Send cpuTimePID metric
+    client.publish('cpuTimePID_lowerMetric',lowerHighestMetrics['cpuTimePIDArray'][0])
+    client.publish('cpuTimePID_highestMetric',lowerHighestMetrics['cpuTimePIDArray'][1])
+    client.publish('cpuTimePID_averageMetric', averageMetrics['cpuTimePIDArray'])
+
+    # Send memVirtual metric
+    client.publish('memVirtual_lowerMetric',lowerHighestMetrics['memVirtualArray'][0])
+    client.publish('memVirtual_highestMetric',lowerHighestMetrics['memVirtualArray'][1])
+    client.publish('memVirtual_averageMetric', averageMetrics['memVirtualArray'])
+
+    # Send memInfo metric
+    client.publish('memInfo_lowerMetric',lowerHighestMetrics['memInfoArray'][0])
+    client.publish('memInfo_highestMetric',lowerHighestMetrics['memInfoArray'][1])
+    client.publish('memInfo_averageMetric', averageMetrics['memInfoArray'])
+
+    # Send diskUsage metric
+    client.publish('diskUsage_lowerMetric',lowerHighestMetrics['diskUsageArray'][0])
+    client.publish('diskUsage_highestMetric',lowerHighestMetrics['diskUsageArray'][1])
+    client.publish('diskUsage_averageMetric', averageMetrics['diskUsageArray'])
+
+# Sent value of quantity publications for the graph
+def pipeline_metrics(quantity,client):
+    count_message(quantity, client)
+    lowerHighestMetrics = get_lowest_highest_metrics_values()
+    averageMetrics = get_average_metrics_values()
+    send_metrics(lowerHighestMetrics,averageMetrics,client)
+    reset_constants_arrays()
+
+# Run the main code with metrics chosen
+def run_main_code(client):
+    pipeline_metrics(8,client)
+    pipeline_metrics(13,client)
+    pipeline_metrics(21,client)
+    pipeline_metrics(34,client)
+    pipeline_metrics(55,client)
+
+# main code
 def count_message(quantity, client):
     i=0
     timeStart = perf_counter()
@@ -130,11 +164,11 @@ def main(args):
     # Declaring all metrics
     get_metrics()
     # Metrics about quantity of publications
-    count_publications(client)
+    run_main_code(client)
 
     # End client mqtt
     
-    print('\n\n####################################')
+    print('\n\nEND ####################################')
     client.disconnect()
 
 if __name__ == "__main__":
