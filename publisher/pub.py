@@ -4,13 +4,16 @@ import time
 from time import process_time, perf_counter # if use perf_counter will calculate time with sleep time 
 import paho.mqtt.client as mqtt
 import psutil
-import statistics 
+import statistics
+import matplotlib.pyplot as plt 
 
 cpuTimeArray = []
 cpuTimePIDArray = []
 memVirtualArray = []
 memInfoArray = []
 diskUsageArray = []
+averageMetricsArrayGraph = []
+axX = []
 
 # Initialize constants
 def reset_constants_arrays():
@@ -19,32 +22,6 @@ def reset_constants_arrays():
     memVirtualArray = []
     memInfoArray = []
     diskUsageArray = []
-
-# take the lowest and highest value to see the range of metrics returned
-def get_lowest_highest_metrics_values():
-    dictFirstLastValues = {'cpuTimeArray':[], 'cpuTimePIDArray':[],  'memVirtualArray':[],  'memInfoArray':[], 'diskUsageArray':[]}
-    
-    cpuTimeArray.sort()
-    dictFirstLastValues['cpuTimeArray'].append(cpuTimeArray[0])
-    dictFirstLastValues['cpuTimeArray'].append(cpuTimeArray[-1])
-    
-    cpuTimePIDArray.sort()
-    dictFirstLastValues['cpuTimePIDArray'].append(cpuTimePIDArray[0])
-    dictFirstLastValues['cpuTimePIDArray'].append(cpuTimePIDArray[-1])
-    
-    memVirtualArray.sort()
-    dictFirstLastValues['memVirtualArray'].append(memVirtualArray[0])
-    dictFirstLastValues['memVirtualArray'].append(memVirtualArray[-1])
-    
-    memInfoArray.sort()
-    dictFirstLastValues['memInfoArray'].append(memInfoArray[0])
-    dictFirstLastValues['memInfoArray'].append(memInfoArray[-1])
-    
-    diskUsageArray.sort()
-    dictFirstLastValues['diskUsageArray'].append(diskUsageArray[0])
-    dictFirstLastValues['diskUsageArray'].append(diskUsageArray[-1])
-   
-    return dictFirstLastValues
 
 # Take the average from values caught in metrics
 def get_average_metrics_values():
@@ -89,47 +66,47 @@ def get_metrics():
     diskUsageArray.append(diskUsage[1])
 
 # Send all metrics to subscribe
-def send_metrics(lowerHighestMetrics, averageMetrics,client):
-
+def send_metrics(averageMetrics,client):
     # Send cpuTime metric
-    client.publish('cpuTime_lowerMetric',lowerHighestMetrics['cpuTimeArray'][0])
-    client.publish('cpuTime_highestMetric',lowerHighestMetrics['cpuTimeArray'][1])
     client.publish('cpuTime_averageMetric', averageMetrics['cpuTimeArray'])
 
     # Send cpuTimePID metric
-    client.publish('cpuTimePID_lowerMetric',lowerHighestMetrics['cpuTimePIDArray'][0])
-    client.publish('cpuTimePID_highestMetric',lowerHighestMetrics['cpuTimePIDArray'][1])
     client.publish('cpuTimePID_averageMetric', averageMetrics['cpuTimePIDArray'])
 
     # Send memVirtual metric
-    client.publish('memVirtual_lowerMetric',lowerHighestMetrics['memVirtualArray'][0])
-    client.publish('memVirtual_highestMetric',lowerHighestMetrics['memVirtualArray'][1])
     client.publish('memVirtual_averageMetric', averageMetrics['memVirtualArray'])
 
     # Send memInfo metric
-    client.publish('memInfo_lowerMetric',lowerHighestMetrics['memInfoArray'][0])
-    client.publish('memInfo_highestMetric',lowerHighestMetrics['memInfoArray'][1])
     client.publish('memInfo_averageMetric', averageMetrics['memInfoArray'])
 
     # Send diskUsage metric
-    client.publish('diskUsage_lowerMetric',lowerHighestMetrics['diskUsageArray'][0])
-    client.publish('diskUsage_highestMetric',lowerHighestMetrics['diskUsageArray'][1])
     client.publish('diskUsage_averageMetric', averageMetrics['diskUsageArray'])
 
 # Sent value of quantity publications for the graph
 def pipeline_metrics(quantity,client):
     count_message(quantity, client)
-    lowerHighestMetrics = get_lowest_highest_metrics_values()
+    # get values for axes X in graphs
+    axX.append(quantity)
     averageMetrics = get_average_metrics_values()
-    send_metrics(lowerHighestMetrics,averageMetrics,client)
+    send_metrics(averageMetrics,client)
+    averageMetricsArrayGraph.append(averageMetrics)
     reset_constants_arrays()
 
 # Run the main code with metrics chosen
 def run_main_code(client):
+    client.publish('reset_count','reset')
     pipeline_metrics(8,client)
+    
+    client.publish('reset_count','reset')
     pipeline_metrics(13,client)
+    
+    client.publish('reset_count','reset')
     pipeline_metrics(21,client)
+    
+    client.publish('reset_count','reset')
     pipeline_metrics(34,client)
+    
+    client.publish('reset_count','reset')
     pipeline_metrics(55,client)
 
 # main code
@@ -149,6 +126,73 @@ def count_message(quantity, client):
     timeTotal = timeEnd - timeStart
     client.publish('time',timeTotal)
 
+# Bar chart with average metric values
+def bar_chart(yMinInterval,yMaxInterval,Y,X,nameImage):
+    
+    fig, ax = plt.subplots()
+    rects = ax.bar(X, Y)
+    ax.set_title('Time process per publisher')
+    ax.set_ylabel('Time')    
+    ax.set_xlabel('Quantity of topics')
+    
+    ax.set_ylim([yMinInterval*0.995,yMaxInterval*1.005])
+    
+    # Make some labels.
+    for rect in rects:
+        height = rect.get_height()
+        ax.text(rect.get_x() + rect.get_width()/2., 1.00001*height,
+                '%.2f' % float(height),
+                ha='center', va='bottom')
+
+    plt.savefig('../data/'+nameImage+'.png')
+
+# Create all graphs necessary, calling functions of charts
+def create_graphs():
+
+    cpuTimeAverage = []
+    cpuTimePIDAverage = []
+    memVirtualAverage = []
+    memInfoAverage = []
+    diskUsageAverage = []
+   
+
+    for i in averageMetricsArrayGraph:
+        cpuTimeAverage.append(i['cpuTimeArray'])
+        cpuTimePIDAverage.append(i['cpuTimePIDArray'])
+        memVirtualAverage.append(i['memVirtualArray'])
+        memInfoAverage.append(i['memInfoArray'])
+        diskUsageAverage.append(i['memInfoArray'])
+    
+
+    # Get all values for interval y axis
+    sortArrMinMax = cpuTimeAverage
+    sortArrMinMax.sort()
+    minCpuTimeAvg = sortArrMinMax[0]
+    maxCpuTimeAvg = sortArrMinMax[-1]
+    sortArrMinMax = cpuTimePIDAverage
+    sortArrMinMax.sort()
+    minCpuTimePIDAvg = sortArrMinMax[0]
+    maxCpuTimePIDAvg = sortArrMinMax[-1]
+    sortArrMinMax = memVirtualAverage
+    sortArrMinMax.sort()
+    minMemVirtualAvg = sortArrMinMax[0]
+    maxMemVirtualAvg = sortArrMinMax[-1]
+    sortArrMinMax = memInfoAverage
+    sortArrMinMax.sort()
+    minMemInfoAvg = sortArrMinMax[0]
+    maxMemInfoAvg = sortArrMinMax[-1]
+    sortArrMinMax = diskUsageAverage
+    sortArrMinMax.sort()
+    minDiskUsageAvg = sortArrMinMax[0]
+    maxDiskUsageAvg = sortArrMinMax[-1]
+
+    # Call function to create a bar chart
+    bar_chart(minCpuTimeAvg,maxCpuTimeAvg,cpuTimeAverage,axX, 'cpuTimeAverage')
+    bar_chart(minCpuTimePIDAvg,maxCpuTimePIDAvg,cpuTimePIDAverage,axX, 'cpuTimePIDAverage')
+    bar_chart(minMemVirtualAvg,maxMemVirtualAvg,memVirtualAverage,axX, 'memVirtualAverage')
+    bar_chart(minMemInfoAvg,maxMemInfoAvg,memInfoAverage,axX, 'memInfoAverage')
+    bar_chart(minDiskUsageAvg,maxDiskUsageAvg,diskUsageAverage,axX, 'diskUsageAverage')
+             
 # Read config file that user can modify 
 def read_config_file(args):
     with open(args[1], 'r') as file:
@@ -165,6 +209,9 @@ def main(args):
     get_metrics()
     # Metrics about quantity of publications
     run_main_code(client)
+
+    # Create graph
+    create_graphs()
 
     # End client mqtt
     
