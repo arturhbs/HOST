@@ -3,9 +3,12 @@ import json
 import time
 from time import process_time, perf_counter # if use perf_counter will calculate time with sleep time 
 import paho.mqtt.client as mqtt
+import pandas as pd
 import psutil
 import statistics
 import matplotlib.pyplot as plt 
+import seaborn as sns
+
 
 cpuTimeArray = []
 cpuTimePIDArray = []
@@ -144,7 +147,16 @@ def bar_chart(yMinInterval,yMaxInterval,Y,X,nameImage):
                 '%.2f' % float(height),
                 ha='center', va='bottom')
 
-    plt.savefig('../data/'+nameImage+'.png')
+    plt.savefig('../data/barChart_'+nameImage+'.png')
+
+def line_chart(Y,X, nameImage):
+    df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','value']) 
+    df['Metric'] = 'value'
+    snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
+                   markers=True,   style='Metric' ,data=df).set_title('Time process per publisher')
+
+    snsLinePlot.figure.savefig('../data/lineChart_'+nameImage+'.png')
+    plt.clf()
 
 # Create all graphs necessary, calling functions of charts
 def create_graphs():
@@ -185,14 +197,22 @@ def create_graphs():
     sortArrMinMax.sort()
     minDiskUsageAvg = sortArrMinMax[0]
     maxDiskUsageAvg = sortArrMinMax[-1]
-
+    
     # Call function to create a bar chart
-    bar_chart(minCpuTimeAvg,maxCpuTimeAvg,cpuTimeAverage,axX, 'cpuTimeAverage')
-    bar_chart(minCpuTimePIDAvg,maxCpuTimePIDAvg,cpuTimePIDAverage,axX, 'cpuTimePIDAverage')
-    bar_chart(minMemVirtualAvg,maxMemVirtualAvg,memVirtualAverage,axX, 'memVirtualAverage')
-    bar_chart(minMemInfoAvg,maxMemInfoAvg,memInfoAverage,axX, 'memInfoAverage')
-    bar_chart(minDiskUsageAvg,maxDiskUsageAvg,diskUsageAverage,axX, 'diskUsageAverage')
-             
+    bar_chart(minCpuTimeAvg,maxCpuTimeAvg,cpuTimeAverage,axX, 'CpuTimeAverage')
+    bar_chart(minCpuTimePIDAvg,maxCpuTimePIDAvg,cpuTimePIDAverage,axX, 'CpuTimePIDAverage')
+    bar_chart(minMemVirtualAvg,maxMemVirtualAvg,memVirtualAverage,axX, 'MemVirtualAverage')
+    bar_chart(minMemInfoAvg,maxMemInfoAvg,memInfoAverage,axX, 'MemInfoAverage')
+    bar_chart(minDiskUsageAvg,maxDiskUsageAvg,diskUsageAverage,axX, 'DiskUsageAverage')
+
+    
+    # Call function to create a line chart
+    line_chart(cpuTimeAverage,axX , 'CpuTimeAverage')
+    line_chart(cpuTimePIDAverage,axX, 'CpuTimePIDAverage')
+    line_chart(memVirtualAverage,axX, 'MemVirtualAverage')
+    line_chart(memInfoAverage,axX, 'MemInfoAverage')
+    line_chart(diskUsageAverage,axX, 'DiskUsageAverage')
+
 # Read config file that user can modify 
 def read_config_file(args):
     with open(args[1], 'r') as file:
