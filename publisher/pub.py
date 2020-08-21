@@ -16,6 +16,7 @@ memVirtualArray = []
 memInfoArray = []
 diskUsageArray = []
 averageMetricsArrayGraph = []
+totalMetricsArrayGraph = []
 axX = []
 
 # Initialize constants
@@ -36,7 +37,19 @@ def get_average_metrics_values():
     dictAverageMetrics['diskUsageArray'] = statistics.mean(diskUsageArray)
     
     return dictAverageMetrics
+
+# Get all values caught in metrics
+def get_all_metrics_values():
     
+    dictTotalMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
+    dictTotalMetrics['cpuTimeArray'] = cpuTimeArray
+    dictTotalMetrics['cpuTimePIDArray'] = cpuTimePIDArray
+    dictTotalMetrics['memVirtualArray'] = memVirtualArray
+    dictTotalMetrics['memInfoArray'] = memInfoArray
+    dictTotalMetrics['diskUsageArray'] = diskUsageArray
+    
+    return dictTotalMetrics
+
 # Get all metrics
 def get_metrics():
     p = psutil.Process()
@@ -91,8 +104,10 @@ def pipeline_metrics(quantity,client):
     # get values for axes X in graphs
     axX.append(quantity)
     averageMetrics = get_average_metrics_values()
-    send_metrics(averageMetrics,client)
     averageMetricsArrayGraph.append(averageMetrics)
+    totalMetrics = get_all_metrics_values()
+    totalMetricsArrayGraph.append(totalMetrics)
+    send_metrics(averageMetrics,client)
     reset_constants_arrays()
 
 # Run the main code with metrics chosen
@@ -149,23 +164,44 @@ def bar_chart(yMinInterval,yMaxInterval,Y,X,nameImage):
 
     plt.savefig('../data/barChart_'+nameImage+'.png')
 
+# Line chart with average metric values
 def line_chart(Y,X, nameImage):
+    plt.clf()
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','value']) 
     df['Metric'] = 'value'
+    sns.set(style = "whitegrid")
     snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
-                   markers=True,   style='Metric' ,data=df).set_title('Time process per publisher')
+                   markers=True,   style='Metric' ,data=df).set_title('Time process per publisher '+nameImage)
 
     snsLinePlot.figure.savefig('../data/lineChart_'+nameImage+'.png')
     plt.clf()
 
+# Boxplot chart with average metric values
+def boxPlot_chart(Y,X, nameImage):
+    plt.clf()
+    df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Metric']) 
+    df = df.explode('Metric')
+    print("NAME IMAGE")
+    print(nameImage)
+    print("\n\ndf")
+    print(df)
+    sns.set(style = "whitegrid")
+    snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
+    snsBoxPlot.figure.savefig('../data/boxPlotChart_'+nameImage+'.png')
+    plt.clf()
+
 # Create all graphs necessary, calling functions of charts
 def create_graphs():
-
     cpuTimeAverage = []
     cpuTimePIDAverage = []
     memVirtualAverage = []
     memInfoAverage = []
     diskUsageAverage = []
+    cpuTimeTotalMetrics = []
+    cpuTimePIDTotalMetrics = []
+    memVirtualTotalMetrics = []
+    memInfoTotalMetrics = []
+    diskUsageTotalMetrics = []
    
 
     for i in averageMetricsArrayGraph:
@@ -173,9 +209,15 @@ def create_graphs():
         cpuTimePIDAverage.append(i['cpuTimePIDArray'])
         memVirtualAverage.append(i['memVirtualArray'])
         memInfoAverage.append(i['memInfoArray'])
-        diskUsageAverage.append(i['memInfoArray'])
-    
+        diskUsageAverage.append(i['diskUsageArray'])
 
+    for i in totalMetricsArrayGraph:
+        cpuTimeTotalMetrics.append(i['cpuTimeArray'])
+        cpuTimePIDTotalMetrics.append(i['cpuTimePIDArray'])
+        memVirtualTotalMetrics.append(i['memVirtualArray'])
+        memInfoTotalMetrics.append(i['memInfoArray'])
+        diskUsageTotalMetrics.append(i['diskUsageArray'])
+    
     # Get all values for interval y axis
     sortArrMinMax = cpuTimeAverage
     sortArrMinMax.sort()
@@ -212,6 +254,13 @@ def create_graphs():
     line_chart(memVirtualAverage,axX, 'MemVirtualAverage')
     line_chart(memInfoAverage,axX, 'MemInfoAverage')
     line_chart(diskUsageAverage,axX, 'DiskUsageAverage')
+    
+    # Call function to create a box plot chart
+    boxPlot_chart(cpuTimeTotalMetrics,axX , 'CpuTimeTotalMetrics')
+    boxPlot_chart(cpuTimePIDTotalMetrics,axX, 'CpuTimePIDTotalMetrics')
+    boxPlot_chart(memVirtualTotalMetrics,axX, 'MemVirtualTotalMetrics')
+    boxPlot_chart(memInfoTotalMetrics,axX, 'MemInfoTotalMetrics')
+    boxPlot_chart(diskUsageTotalMetrics,axX, 'DiskUsageTotalMetrics')
 
 # Read config file that user can modify 
 def read_config_file(args):
