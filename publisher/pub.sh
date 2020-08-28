@@ -2,5 +2,8 @@
 
 pip install paho-mqtt
 pip install psutil
-python -u pub.py ./config/config.json
+pip install matplotlib
+pip install pandas
+pip install seaborn
+python -u pub.py ../config/config.json
 

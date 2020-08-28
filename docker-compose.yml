@@ -7,7 +7,8 @@ services:
         image: python:3.6
         volumes: 
             - ./publisher:/app
-            - ./config:/app/config
+            - ./data:/data
+            - ./config:/config
         working_dir: /app
         command:  ./pub.sh
         networks:
@@ -19,7 +20,7 @@ services:
         volumes: 
             - ./subscriber:/app
             - ./data:/data
-            - ./config:/app/config
+            - ./config:/config
         working_dir: /app
         command:  ./sub.sh
         networks:
