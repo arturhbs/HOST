@@ -7,13 +7,17 @@ import numpy as np
 
 take_time = []
 take_count = []
-
+cpuTimeAvg = []
+cpuTimePIDAvg = []
+memVirtualAvg = []
+memInfoAvg = []
+diskUsageAvg = []
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
     # Subscribing in on_connect() means that if we lose the connection and reconnect then subscriptions will be renewed.
     # client.subscribe("$SYS/#") # Show every message
-    client.subscribe([("count", 0),('time', 0)],qos=1)
+    client.subscribe([("count", 0),('time', 0),('cpuTimeAvg',0),('cpuTimePIDAvg',0),('memVirtualAvg',0),('memInfoAvg',0),('diskUsageAvg',0)],qos=1)
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
@@ -24,14 +28,26 @@ def on_message(client, userdata, msg):
 
 # Identify message recieved
 def read_message(topic,msg):
-    if topic == 'time':
+    if topic == 'cpuTimeAvg':
+        cpuTimeAvg.append(msg)
+    elif topic == 'cpuTimePIDAvg':
+        cpuTimePIDAvg.append(msg)
+    elif topic == 'memVirtualAvg':
+        memVirtualAvg.append(msg)
+    elif topic == 'memInfoAvg':
+        memInfoAvg.append(msg)
+    elif topic == 'diskUsageAvg':
+        diskUsageAvg.append(msg)
+    elif topic == 'time':
         take_time.append(msg)
-    if topic == 'count':
+    elif topic == 'count':
         take_count.append(msg)
     lastTopic = topic    
     check_valeus(take_time, take_count, lastTopic)
 
 def check_valeus(take_time, take_count, lastTopic):
+    print("\ncputime: ")
+    print(len(cpuTimeAvg))
     print(len(take_time))
     if len(take_time)%5 == 0 and lastTopic == 'time':
         axY = []

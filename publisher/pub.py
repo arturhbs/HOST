@@ -82,21 +82,25 @@ def get_metrics():
     diskUsageArray.append(diskUsage[1])
 
 # Send all metrics to subscribe
-def send_metrics(averageMetrics,client):
-    # Send cpuTime metric
-    client.publish('cpuTime_averageMetric', averageMetrics['cpuTimeArray'])
+def send_metrics(client):
+    print(averageMetricsArrayGraph)
+    print(averageMetricsArrayGraph[0])
+    for i in range(5):
+        
+        # Send cpuTime metric
+        client.publish('cpuTimeAvg', averageMetricsArrayGraph[i]['cpuTimeArray'])
 
-    # Send cpuTimePID metric
-    client.publish('cpuTimePID_averageMetric', averageMetrics['cpuTimePIDArray'])
+        # Send cpuTimePID metric
+        client.publish('cpuTimePIDAvg', averageMetricsArrayGraph[i]['cpuTimePIDArray'])
 
-    # Send memVirtual metric
-    client.publish('memVirtual_averageMetric', averageMetrics['memVirtualArray'])
+        # Send memVirtual metric
+        client.publish('memVirtualAvg', averageMetricsArrayGraph[i]['memVirtualArray'])
 
-    # Send memInfo metric
-    client.publish('memInfo_averageMetric', averageMetrics['memInfoArray'])
+        # Send memInfo metric
+        client.publish('memInfoAvg', averageMetricsArrayGraph[i]['memInfoArray'])
 
-    # Send diskUsage metric
-    client.publish('diskUsage_averageMetric', averageMetrics['diskUsageArray'])
+        # Send diskUsage metric
+        client.publish('diskUsageAvg', averageMetricsArrayGraph[i]['diskUsageArray'])
 
 # Sent value of quantity publications for the graph
 def pipeline_metrics(quantity,client):
@@ -107,7 +111,6 @@ def pipeline_metrics(quantity,client):
     averageMetricsArrayGraph.append(averageMetrics)
     totalMetrics = get_all_metrics_values()
     totalMetricsArrayGraph.append(totalMetrics)
-    send_metrics(averageMetrics,client)
     reset_constants_arrays()
 
 # Run the main code with metrics chosen
@@ -181,10 +184,6 @@ def boxPlot_chart(Y,X, nameImage):
     plt.clf()
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Metric']) 
     df = df.explode('Metric')
-    print("NAME IMAGE")
-    print(nameImage)
-    print("\n\ndf")
-    print(df)
     sns.set(style = "whitegrid")
     snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
     snsBoxPlot.figure.savefig('../data/boxPlotChart_'+nameImage+'.png')
@@ -282,9 +281,9 @@ def main(args):
     # Create graph
     create_graphs()
 
+    send_metrics(client)
+
     # End client mqtt
-    
-    print('\n\nEND ####################################')
     client.disconnect()
 
 if __name__ == "__main__":
