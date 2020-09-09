@@ -88,19 +88,19 @@ def send_metrics(client):
     for i in range(5):
         
         # Send cpuTime metric
-        client.publish('cpuTimeAvg', averageMetricsArrayGraph[i]['cpuTimeArray'])
+        client.publish('cpuTimeAvg', str(averageMetricsArrayGraph[i]['cpuTimeArray']) + ',' + str(i))
 
         # Send cpuTimePID metric
-        client.publish('cpuTimePIDAvg', averageMetricsArrayGraph[i]['cpuTimePIDArray'])
+        client.publish('cpuTimePIDAvg', str(averageMetricsArrayGraph[i]['cpuTimePIDArray']) + ',' + str(i))
 
         # Send memVirtual metric
-        client.publish('memVirtualAvg', averageMetricsArrayGraph[i]['memVirtualArray'])
+        client.publish('memVirtualAvg', str(averageMetricsArrayGraph[i]['memVirtualArray']) + ',' + str(i))
 
         # Send memInfo metric
-        client.publish('memInfoAvg', averageMetricsArrayGraph[i]['memInfoArray'])
+        client.publish('memInfoAvg', str(averageMetricsArrayGraph[i]['memInfoArray']) + ',' + str(i))
 
         # Send diskUsage metric
-        client.publish('diskUsageAvg', averageMetricsArrayGraph[i]['diskUsageArray'])
+        client.publish('diskUsageAvg', str(averageMetricsArrayGraph[i]['diskUsageArray']) + ',' + str(i))
 
 # Sent value of quantity publications for the graph
 def pipeline_metrics(quantity,client):

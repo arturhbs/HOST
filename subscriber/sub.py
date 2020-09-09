@@ -23,25 +23,29 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     # print(msg.topic+" "+str(msg.payload))
     message = msg.payload.decode('UTF-8')
-    message = float(message)
-    read_message(msg.topic,message)
+    messageSplit = message.split(sep=',')
+    messageMetric = messageSplit[0]
+    messageIndex = messageSplit[1]
+    print("messageMetric  = ", float(messageMetric))
+    print("messageIndex  = ", int(messageIndex))
+    read_message(msg.topic,messageMetric,messageIndex)
 
 # Identify message recieved
-def read_message(topic,msg):
+def read_message(topic,msgMetric,msgIndex):
     if topic == 'cpuTimeAvg':
-        cpuTimeAvg.append(msg)
+        cpuTimeAvg.append(msgMetric)
     elif topic == 'cpuTimePIDAvg':
-        cpuTimePIDAvg.append(msg)
+        cpuTimePIDAvg.append(msgMetric)
     elif topic == 'memVirtualAvg':
-        memVirtualAvg.append(msg)
+        memVirtualAvg.append(msgMetric)
     elif topic == 'memInfoAvg':
-        memInfoAvg.append(msg)
+        memInfoAvg.append(msgMetric)
     elif topic == 'diskUsageAvg':
-        diskUsageAvg.append(msg)
+        diskUsageAvg.append(msgMetric)
     elif topic == 'time':
-        take_time.append(msg)
+        take_time.append(msgMetric)
     elif topic == 'count':
-        take_count.append(msg)
+        take_count.append(msgMetric)
     lastTopic = topic    
     check_valeus(take_time, take_count, lastTopic)
 
