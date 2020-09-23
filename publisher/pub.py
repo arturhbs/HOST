@@ -151,26 +151,6 @@ def count_message(quantity, client):
     timeTotal = timeEnd - timeStart
     client.publish('time',timeTotal)
 
-# Bar chart with average metric values
-def bar_chart(yMinInterval,yMaxInterval,Y,X,nameImage):
-    
-    fig, ax = plt.subplots()
-    rects = ax.bar(X, Y)
-    ax.set_title('Time process per publisher')
-    ax.set_ylabel('Time')    
-    ax.set_xlabel('Quantity of topics')
-    
-    ax.set_ylim([yMinInterval*0.995,yMaxInterval*1.005])
-    
-    # Make some labels.
-    for rect in rects:
-        height = rect.get_height()
-        ax.text(rect.get_x() + rect.get_width()/2., 1.00001*height,
-                '%.2f' % float(height),
-                ha='center', va='bottom')
-
-    plt.savefig('../data/publisher/barChart_'+nameImage+'.png')
-
 # Line chart with average metric values
 def line_chart(Y,X, nameImage, id_pub):
 
@@ -243,13 +223,6 @@ def create_graphs(id_pub):
     sortArrMinMax.sort()
     minDiskUsageAvg = sortArrMinMax[0]
     maxDiskUsageAvg = sortArrMinMax[-1]
-    
-    # Call function to create a bar chart
-    # bar_chart(minCpuTimeAvg,maxCpuTimeAvg,cpuTimeAverage,axX, 'CpuTimeAverage')
-    # bar_chart(minCpuTimePIDAvg,maxCpuTimePIDAvg,cpuTimePIDAverage,axX, 'CpuTimePIDAverage')
-    # bar_chart(minMemVirtualAvg,maxMemVirtualAvg,memVirtualAverage,axX, 'MemVirtualAverage')
-    # bar_chart(minMemInfoAvg,maxMemInfoAvg,memInfoAverage,axX, 'MemInfoAverage')
-    # bar_chart(minDiskUsageAvg,maxDiskUsageAvg,diskUsageAverage,axX, 'DiskUsageAverage')
 
     # Create directory with the id of the publisher
     Path("../data/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
