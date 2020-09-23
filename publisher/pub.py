@@ -8,7 +8,8 @@ import psutil
 import statistics
 import matplotlib.pyplot as plt 
 import seaborn as sns
-
+import uuid
+from pathlib import Path
 
 cpuTimeArray = []
 cpuTimePIDArray = []
@@ -86,22 +87,23 @@ def send_metrics(client):
     # print(averageMetricsArrayGraph)
     print('array[4]:\n',averageMetricsArrayGraph[4])
     for i in range(5):
-        
-        # Send cpuTime metric
-        client.publish('cpuTimeAvg', str(averageMetricsArrayGraph[i]['cpuTimeArray']) + ',' + str(i), qos=1)
-       
-        # Send cpuTimePID metric
-        client.publish('cpuTimePIDAvg', str(averageMetricsArrayGraph[i]['cpuTimePIDArray']) + ',' + str(i), qos=1)
+        try:
+            # Send cpuTime metric
+            client.publish('cpuTimeAvg', str(averageMetricsArrayGraph[i]['cpuTimeArray']) + ',' + str(i), qos=1)
+            
+            # Send cpuTimePID metric
+            client.publish('cpuTimePIDAvg', str(averageMetricsArrayGraph[i]['cpuTimePIDArray']) + ',' + str(i), qos=1)
 
-        # Send memVirtual metric
-        client.publish('memVirtualAvg', str(averageMetricsArrayGraph[i]['memVirtualArray']) + ',' + str(i), qos=1)
+            # Send memVirtual metric
+            client.publish('memVirtualAvg', str(averageMetricsArrayGraph[i]['memVirtualArray']) + ',' + str(i), qos=1)
 
-        # Send memInfo metric
-        client.publish('memInfoAvg', str(averageMetricsArrayGraph[i]['memInfoArray']) + ',' + str(i), qos=1)
+            # Send memInfo metric
+            client.publish('memInfoAvg', str(averageMetricsArrayGraph[i]['memInfoArray']) + ',' + str(i), qos=1)
 
-        # Send diskUsage metric
-        client.publish('diskUsageAvg', str(averageMetricsArrayGraph[i]['diskUsageArray']) + ',' + str(i), qos=1)
-
+            # Send diskUsage metric
+            client.publish('diskUsageAvg', str(averageMetricsArrayGraph[i]['diskUsageArray']) + ',' + str(i), qos=1)
+        except ErrorSendingMessage:
+            print("Value i that got error was: ", i)
     print("*** Acabaram os envios ***")
 
 # Sent value of quantity publications for the graph
@@ -170,7 +172,8 @@ def bar_chart(yMinInterval,yMaxInterval,Y,X,nameImage):
     plt.savefig('../data/publisher/barChart_'+nameImage+'.png')
 
 # Line chart with average metric values
-def line_chart(Y,X, nameImage):
+def line_chart(Y,X, nameImage, id_pub):
+
     plt.clf()
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','value']) 
     df['Metric'] = 'value'
@@ -178,21 +181,21 @@ def line_chart(Y,X, nameImage):
     snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
                    markers=True,   style='Metric' ,data=df).set_title('Time process per publisher '+nameImage)
 
-    snsLinePlot.figure.savefig('../data/publisher/lineChart_'+nameImage+'.png')
+    snsLinePlot.figure.savefig('../data/publisher/'+id_pub +'/lineChart_'+nameImage+'.png')
     plt.clf()
 
 # Boxplot chart with average metric values
-def boxPlot_chart(Y,X, nameImage):
+def boxPlot_chart(Y,X, nameImage, id_pub):
     plt.clf()
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Metric']) 
     df = df.explode('Metric')
     sns.set(style = "whitegrid")
     snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
-    snsBoxPlot.figure.savefig('../data/publisher/boxPlotChart_'+nameImage+'.png')
+    snsBoxPlot.figure.savefig('../data/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
     plt.clf()
 
 # Create all graphs necessary, calling functions of charts
-def create_graphs():
+def create_graphs(id_pub):
     cpuTimeAverage = []
     cpuTimePIDAverage = []
     memVirtualAverage = []
@@ -242,26 +245,28 @@ def create_graphs():
     maxDiskUsageAvg = sortArrMinMax[-1]
     
     # Call function to create a bar chart
-    bar_chart(minCpuTimeAvg,maxCpuTimeAvg,cpuTimeAverage,axX, 'CpuTimeAverage')
-    bar_chart(minCpuTimePIDAvg,maxCpuTimePIDAvg,cpuTimePIDAverage,axX, 'CpuTimePIDAverage')
-    bar_chart(minMemVirtualAvg,maxMemVirtualAvg,memVirtualAverage,axX, 'MemVirtualAverage')
-    bar_chart(minMemInfoAvg,maxMemInfoAvg,memInfoAverage,axX, 'MemInfoAverage')
-    bar_chart(minDiskUsageAvg,maxDiskUsageAvg,diskUsageAverage,axX, 'DiskUsageAverage')
+    # bar_chart(minCpuTimeAvg,maxCpuTimeAvg,cpuTimeAverage,axX, 'CpuTimeAverage')
+    # bar_chart(minCpuTimePIDAvg,maxCpuTimePIDAvg,cpuTimePIDAverage,axX, 'CpuTimePIDAverage')
+    # bar_chart(minMemVirtualAvg,maxMemVirtualAvg,memVirtualAverage,axX, 'MemVirtualAverage')
+    # bar_chart(minMemInfoAvg,maxMemInfoAvg,memInfoAverage,axX, 'MemInfoAverage')
+    # bar_chart(minDiskUsageAvg,maxDiskUsageAvg,diskUsageAverage,axX, 'DiskUsageAverage')
 
+    # Create directory with the id of the publisher
+    Path("../data/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
     
     # Call function to create a line chart
-    line_chart(cpuTimeAverage,axX , 'CpuTimeAverage')
-    line_chart(cpuTimePIDAverage,axX, 'CpuTimePIDAverage')
-    line_chart(memVirtualAverage,axX, 'MemVirtualAverage')
-    line_chart(memInfoAverage,axX, 'MemInfoAverage')
-    line_chart(diskUsageAverage,axX, 'DiskUsageAverage')
+    line_chart(cpuTimeAverage,axX , 'CpuTimeAverage', id_pub)
+    line_chart(cpuTimePIDAverage,axX, 'CpuTimePIDAverage',id_pub)
+    line_chart(memVirtualAverage,axX, 'MemVirtualAverage', id_pub)
+    line_chart(memInfoAverage,axX, 'MemInfoAverage', id_pub)
+    line_chart(diskUsageAverage,axX, 'DiskUsageAverage', id_pub)
     
     # Call function to create a box plot chart
-    boxPlot_chart(cpuTimeTotalMetrics,axX , 'CpuTimeTotalMetrics')
-    boxPlot_chart(cpuTimePIDTotalMetrics,axX, 'CpuTimePIDTotalMetrics')
-    boxPlot_chart(memVirtualTotalMetrics,axX, 'MemVirtualTotalMetrics')
-    boxPlot_chart(memInfoTotalMetrics,axX, 'MemInfoTotalMetrics')
-    boxPlot_chart(diskUsageTotalMetrics,axX, 'DiskUsageTotalMetrics')
+    boxPlot_chart(cpuTimeTotalMetrics,axX , 'CpuTimeTotalMetrics', id_pub)
+    boxPlot_chart(cpuTimePIDTotalMetrics,axX, 'CpuTimePIDTotalMetrics', id_pub)
+    boxPlot_chart(memVirtualTotalMetrics,axX, 'MemVirtualTotalMetrics', id_pub)
+    boxPlot_chart(memInfoTotalMetrics,axX, 'MemInfoTotalMetrics', id_pub)
+    boxPlot_chart(diskUsageTotalMetrics,axX, 'DiskUsageTotalMetrics', id_pub)
 
 # Read config file that user can modify 
 def read_config_file(args):
@@ -270,6 +275,10 @@ def read_config_file(args):
     return config['publisher']
 
 def main(args):
+    # Get id for publisher
+    id_pub = str(uuid.uuid4()) 
+    print("**** ID *****")
+    print(id_pub)
     # Read config file passed as argument
     config = read_config_file(args)
     # Connection with client paho.mqtt api
@@ -277,11 +286,11 @@ def main(args):
     client.connect(config['hostIP'], config['port'], config['keepAlive'])
     # Declaring all metrics
     get_metrics()
-    # Metrics about quantity of publications
+    # Metrics about quantity of publicationsX
     run_main_code(client)
 
     # Create graph
-    create_graphs()
+    create_graphs(id_pub)
 
     # Send metrics to subscriber
     send_metrics(client)
