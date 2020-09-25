@@ -85,23 +85,30 @@ def get_metrics():
 # Send all metrics to subscribe
 def send_metrics(client):
     # print(averageMetricsArrayGraph)
+    client.loop_start()
     print('array[4]:\n',averageMetricsArrayGraph[4])
     for i in range(5):
         try:
             # Send cpuTime metric
-            client.publish('cpuTimeAvg', str(averageMetricsArrayGraph[i]['cpuTimeArray']) + ',' + str(i), qos=1)
-            
+            waitForPublisher = client.publish('cpuTimeAvg', str(averageMetricsArrayGraph[i]['cpuTimeArray']) + ',' + str(i), qos=1)
+            waitForPublisher.wait_for_publish()
+           
             # Send cpuTimePID metric
-            client.publish('cpuTimePIDAvg', str(averageMetricsArrayGraph[i]['cpuTimePIDArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('cpuTimePIDAvg', str(averageMetricsArrayGraph[i]['cpuTimePIDArray']) + ',' + str(i), qos=1,retain=False) 
+            waitForPublisher.wait_for_publish()
 
             # Send memVirtual metric
-            client.publish('memVirtualAvg', str(averageMetricsArrayGraph[i]['memVirtualArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('memVirtualAvg', str(averageMetricsArrayGraph[i]['memVirtualArray']) + ',' + str(i), qos=1)
+            waitForPublisher.wait_for_publish()
 
             # Send memInfo metric
-            client.publish('memInfoAvg', str(averageMetricsArrayGraph[i]['memInfoArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('memInfoAvg', str(averageMetricsArrayGraph[i]['memInfoArray']) + ',' + str(i), qos=1)
+            waitForPublisher.wait_for_publish()
 
             # Send diskUsage metric
-            client.publish('diskUsageAvg', str(averageMetricsArrayGraph[i]['diskUsageArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('diskUsageAvg', str(averageMetricsArrayGraph[i]['diskUsageArray']) + ',' + str(i), qos=1)
+            waitForPublisher.wait_for_publish()
+
         except ErrorSendingMessage:
             print("Value i that got error was: ", i)
     print("*** Acabaram os envios ***")
@@ -120,19 +127,19 @@ def pipeline_metrics(quantity,client):
 # Run the main code with metrics chosen
 def run_main_code(client):
     client.publish('reset_count','reset')
+    pipeline_metrics(2,client)
+    
+    client.publish('reset_count','reset')
+    pipeline_metrics(4,client)
+    
+    client.publish('reset_count','reset')
+    pipeline_metrics(6,client)
+    
+    client.publish('reset_count','reset')
     pipeline_metrics(8,client)
     
     client.publish('reset_count','reset')
-    pipeline_metrics(13,client)
-    
-    client.publish('reset_count','reset')
-    pipeline_metrics(21,client)
-    
-    client.publish('reset_count','reset')
-    pipeline_metrics(34,client)
-    
-    client.publish('reset_count','reset')
-    pipeline_metrics(55,client)
+    pipeline_metrics(10,client)
 
 # main code
 def count_message(quantity, client):

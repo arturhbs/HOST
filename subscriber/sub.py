@@ -128,11 +128,12 @@ def read_message(topic,msgMetric,msgIndex):
             
         elif msgIndex == 4:   
             metricAvg['diskUsageAvg_4'].append(msgMetric)
- 
+    #
     # print("finished = ", finished)
     # if topic == 'finished':
     #     finished += 1
-    print('LEN == ',len(metricAvg['diskUsageAvg_3']))
+    print("\n ************* Metric : \n", metricAvg)
+    # print('LEN == ',len(metricAvg['diskUsageAvg_3']))
     if(len(metricAvg['diskUsageAvg_3']) == 3 ):
         create_graph()
     # if nameMetricIndex ==  'diskUsageAvg_4':
