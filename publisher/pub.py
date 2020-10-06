@@ -1,4 +1,5 @@
 import sys
+import os
 import json
 import time
 from time import process_time, perf_counter # if use perf_counter will calculate time with sleep time 
@@ -8,7 +9,6 @@ import psutil
 import statistics
 import matplotlib.pyplot as plt 
 import seaborn as sns
-import uuid
 from pathlib import Path
 
 cpuTimeArray = []
@@ -86,7 +86,6 @@ def get_metrics():
 def send_metrics(client):
     # print(averageMetricsArrayGraph)
     client.loop_start()
-    print('array[4]:\n',averageMetricsArrayGraph[4])
     for i in range(5):
         try:
             # Send cpuTime metric
@@ -111,7 +110,6 @@ def send_metrics(client):
 
         except ErrorSendingMessage:
             print("Value i that got error was: ", i)
-    print("*** Acabaram os envios ***")
 
 # Sent value of quantity publications for the graph
 def pipeline_metrics(quantity,client):
@@ -176,8 +174,11 @@ def boxPlot_chart(Y,X, nameImage, id_pub):
     plt.clf()
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Metric']) 
     df = df.explode('Metric')
+    print("***DF****")
+    print(df.to_string())
     sns.set(style = "whitegrid")
-    snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
+    # snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
+    snsBoxPlot = sns.boxplot(x=df["Metric"]).set_title('Time process per publisher '+nameImage)
     snsBoxPlot.figure.savefig('../data/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
     plt.clf()
 
@@ -256,16 +257,20 @@ def read_config_file(args):
 
 def main(args):
     # Get id for publisher
-    id_pub = str(uuid.uuid4()) 
     print("**** ID *****")
-    print(id_pub)
+    print(os.getpid())
+    id_pub = str(os.getpid())
+    
     # Read config file passed as argument
     config = read_config_file(args)
+    
     # Connection with client paho.mqtt api
     client = mqtt.Client()
     client.connect(config['hostIP'], config['port'], config['keepAlive'])
+    
     # Declaring all metrics
     get_metrics()
+
     # Metrics about quantity of publicationsX
     run_main_code(client)
 
