@@ -1,5 +1,4 @@
 import sys
-import os
 import json
 import time
 from time import process_time, perf_counter # if use perf_counter will calculate time with sleep time 
@@ -9,6 +8,7 @@ import psutil
 import statistics
 import matplotlib.pyplot as plt 
 import seaborn as sns
+import uuid
 from pathlib import Path
 
 cpuTimeArray = []
@@ -42,7 +42,7 @@ def get_average_metrics_values():
 
 # Get all values caught in metrics
 def get_all_metrics_values():
-    
+    # With [:] it is passing the value, not the pointer
     dictTotalMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
     dictTotalMetrics['cpuTimeArray'] = cpuTimeArray[:]
     dictTotalMetrics['cpuTimePIDArray'] = cpuTimePIDArray[:]
@@ -134,6 +134,7 @@ def run_main_code(client):
 
 # main code
 def count_message(quantity, client):
+    get_metrics()
     i=0
     timeStart = perf_counter()
     while True:
@@ -147,7 +148,7 @@ def count_message(quantity, client):
             break
     timeEnd = perf_counter()
     timeTotal = timeEnd - timeStart
-    client.publish('time',timeTotal)
+    get_metrics()
 
 # Line chart with average metric values
 def line_chart(Y,X, nameImage, id_pub):
@@ -165,10 +166,8 @@ def line_chart(Y,X, nameImage, id_pub):
 # Boxplot chart with average metric values
 def boxPlot_chart(Y,X, nameImage, id_pub):
     plt.clf()
-
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Metric']) 
     df = df.explode('Metric')
-
     sns.set(style = "whitegrid")
     snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
     # snsBoxPlot = sns.boxplot(x=df["Metric"]).set_title('Time process per publisher '+nameImage)
@@ -227,10 +226,9 @@ def read_config_file(args):
 
 def main(args):
     # Get id for publisher
+    id_pub = str(uuid.uuid4()) 
     print("**** ID *****")
-    print(os.getpid())
-    id_pub = str(os.getpid())
-    
+    print(id_pub)
     # Read config file passed as argument
     config = read_config_file(args)
     
