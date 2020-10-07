@@ -20,13 +20,14 @@ averageMetricsArrayGraph = []
 totalMetricsArrayGraph = []
 axX = []
 
+
 # Initialize constants
 def reset_constants_arrays():
-    cpuTimeArray = []
-    cpuTimePIDArray = []
-    memVirtualArray = []
-    memInfoArray = []
-    diskUsageArray = []
+    cpuTimeArray.clear()
+    cpuTimePIDArray.clear()
+    memVirtualArray.clear()
+    memInfoArray.clear()
+    diskUsageArray.clear()
 
 # Take the average from values caught in metrics
 def get_average_metrics_values():
@@ -43,12 +44,12 @@ def get_average_metrics_values():
 def get_all_metrics_values():
     
     dictTotalMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
-    dictTotalMetrics['cpuTimeArray'] = cpuTimeArray
-    dictTotalMetrics['cpuTimePIDArray'] = cpuTimePIDArray
-    dictTotalMetrics['memVirtualArray'] = memVirtualArray
-    dictTotalMetrics['memInfoArray'] = memInfoArray
-    dictTotalMetrics['diskUsageArray'] = diskUsageArray
-    
+    dictTotalMetrics['cpuTimeArray'] = cpuTimeArray[:]
+    dictTotalMetrics['cpuTimePIDArray'] = cpuTimePIDArray[:]
+    dictTotalMetrics['memVirtualArray'] = memVirtualArray[:]
+    dictTotalMetrics['memInfoArray'] = memInfoArray[:]
+    dictTotalMetrics['diskUsageArray'] = diskUsageArray[:]
+
     return dictTotalMetrics
 
 # Get all metrics
@@ -124,20 +125,12 @@ def pipeline_metrics(quantity,client):
 
 # Run the main code with metrics chosen
 def run_main_code(client):
-    client.publish('reset_count','reset')
-    pipeline_metrics(2,client)
-    
-    client.publish('reset_count','reset')
-    pipeline_metrics(4,client)
-    
-    client.publish('reset_count','reset')
-    pipeline_metrics(6,client)
-    
-    client.publish('reset_count','reset')
+    # Call pipeline fuction with fibonacci's number
     pipeline_metrics(8,client)
-    
-    client.publish('reset_count','reset')
-    pipeline_metrics(10,client)
+    pipeline_metrics(13,client)
+    pipeline_metrics(21,client)    
+    pipeline_metrics(34,client)    
+    pipeline_metrics(55,client)
 
 # main code
 def count_message(quantity, client):
@@ -172,13 +165,13 @@ def line_chart(Y,X, nameImage, id_pub):
 # Boxplot chart with average metric values
 def boxPlot_chart(Y,X, nameImage, id_pub):
     plt.clf()
+
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Metric']) 
     df = df.explode('Metric')
-    print("***DF****")
-    print(df.to_string())
+
     sns.set(style = "whitegrid")
-    # snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
-    snsBoxPlot = sns.boxplot(x=df["Metric"]).set_title('Time process per publisher '+nameImage)
+    snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
+    # snsBoxPlot = sns.boxplot(x=df["Metric"]).set_title('Time process per publisher '+nameImage)
     snsBoxPlot.figure.savefig('../data/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
     plt.clf()
 
@@ -195,14 +188,13 @@ def create_graphs(id_pub):
     memInfoTotalMetrics = []
     diskUsageTotalMetrics = []
    
-
     for i in averageMetricsArrayGraph:
         cpuTimeAverage.append(i['cpuTimeArray'])
         cpuTimePIDAverage.append(i['cpuTimePIDArray'])
         memVirtualAverage.append(i['memVirtualArray'])
         memInfoAverage.append(i['memInfoArray'])
         diskUsageAverage.append(i['diskUsageArray'])
-
+    
     for i in totalMetricsArrayGraph:
         cpuTimeTotalMetrics.append(i['cpuTimeArray'])
         cpuTimePIDTotalMetrics.append(i['cpuTimePIDArray'])
@@ -210,28 +202,6 @@ def create_graphs(id_pub):
         memInfoTotalMetrics.append(i['memInfoArray'])
         diskUsageTotalMetrics.append(i['diskUsageArray'])
     
-    # Get all values for interval y axis
-    sortArrMinMax = cpuTimeAverage
-    sortArrMinMax.sort()
-    minCpuTimeAvg = sortArrMinMax[0]
-    maxCpuTimeAvg = sortArrMinMax[-1]
-    sortArrMinMax = cpuTimePIDAverage
-    sortArrMinMax.sort()
-    minCpuTimePIDAvg = sortArrMinMax[0]
-    maxCpuTimePIDAvg = sortArrMinMax[-1]
-    sortArrMinMax = memVirtualAverage
-    sortArrMinMax.sort()
-    minMemVirtualAvg = sortArrMinMax[0]
-    maxMemVirtualAvg = sortArrMinMax[-1]
-    sortArrMinMax = memInfoAverage
-    sortArrMinMax.sort()
-    minMemInfoAvg = sortArrMinMax[0]
-    maxMemInfoAvg = sortArrMinMax[-1]
-    sortArrMinMax = diskUsageAverage
-    sortArrMinMax.sort()
-    minDiskUsageAvg = sortArrMinMax[0]
-    maxDiskUsageAvg = sortArrMinMax[-1]
-
     # Create directory with the id of the publisher
     Path("../data/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
     
@@ -280,8 +250,6 @@ def main(args):
     # Send metrics to subscriber
     send_metrics(client)
     
-    # Send message that this publisher finished
-    client.publish('finished', 'finished' , qos=1)
     print("####### Vai desconectar ######")
     # End client mqtt
     client.disconnect()
