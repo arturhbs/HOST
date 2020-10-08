@@ -20,13 +20,14 @@ averageMetricsArrayGraph = []
 totalMetricsArrayGraph = []
 axX = []
 
+
 # Initialize constants
 def reset_constants_arrays():
-    cpuTimeArray = []
-    cpuTimePIDArray = []
-    memVirtualArray = []
-    memInfoArray = []
-    diskUsageArray = []
+    cpuTimeArray.clear()
+    cpuTimePIDArray.clear()
+    memVirtualArray.clear()
+    memInfoArray.clear()
+    diskUsageArray.clear()
 
 # Take the average from values caught in metrics
 def get_average_metrics_values():
@@ -41,14 +42,14 @@ def get_average_metrics_values():
 
 # Get all values caught in metrics
 def get_all_metrics_values():
-    
+    # With [:] it is passing the value, not the pointer
     dictTotalMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
-    dictTotalMetrics['cpuTimeArray'] = cpuTimeArray
-    dictTotalMetrics['cpuTimePIDArray'] = cpuTimePIDArray
-    dictTotalMetrics['memVirtualArray'] = memVirtualArray
-    dictTotalMetrics['memInfoArray'] = memInfoArray
-    dictTotalMetrics['diskUsageArray'] = diskUsageArray
-    
+    dictTotalMetrics['cpuTimeArray'] = cpuTimeArray[:]
+    dictTotalMetrics['cpuTimePIDArray'] = cpuTimePIDArray[:]
+    dictTotalMetrics['memVirtualArray'] = memVirtualArray[:]
+    dictTotalMetrics['memInfoArray'] = memInfoArray[:]
+    dictTotalMetrics['diskUsageArray'] = diskUsageArray[:]
+
     return dictTotalMetrics
 
 # Get all metrics
@@ -85,26 +86,31 @@ def get_metrics():
 # Send all metrics to subscribe
 def send_metrics(client):
     # print(averageMetricsArrayGraph)
-    print('array[4]:\n',averageMetricsArrayGraph[4])
+    client.loop_start()
     for i in range(5):
         try:
             # Send cpuTime metric
-            client.publish('cpuTimeAvg', str(averageMetricsArrayGraph[i]['cpuTimeArray']) + ',' + str(i), qos=1)
-            
+            waitForPublisher = client.publish('cpuTimeAvg', str(averageMetricsArrayGraph[i]['cpuTimeArray']) + ',' + str(i), qos=1)
+            waitForPublisher.wait_for_publish()
+           
             # Send cpuTimePID metric
-            client.publish('cpuTimePIDAvg', str(averageMetricsArrayGraph[i]['cpuTimePIDArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('cpuTimePIDAvg', str(averageMetricsArrayGraph[i]['cpuTimePIDArray']) + ',' + str(i), qos=1,retain=False) 
+            waitForPublisher.wait_for_publish()
 
             # Send memVirtual metric
-            client.publish('memVirtualAvg', str(averageMetricsArrayGraph[i]['memVirtualArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('memVirtualAvg', str(averageMetricsArrayGraph[i]['memVirtualArray']) + ',' + str(i), qos=1)
+            waitForPublisher.wait_for_publish()
 
             # Send memInfo metric
-            client.publish('memInfoAvg', str(averageMetricsArrayGraph[i]['memInfoArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('memInfoAvg', str(averageMetricsArrayGraph[i]['memInfoArray']) + ',' + str(i), qos=1)
+            waitForPublisher.wait_for_publish()
 
             # Send diskUsage metric
-            client.publish('diskUsageAvg', str(averageMetricsArrayGraph[i]['diskUsageArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('diskUsageAvg', str(averageMetricsArrayGraph[i]['diskUsageArray']) + ',' + str(i), qos=1)
+            waitForPublisher.wait_for_publish()
+
         except ErrorSendingMessage:
             print("Value i that got error was: ", i)
-    print("*** Acabaram os envios ***")
 
 # Sent value of quantity publications for the graph
 def pipeline_metrics(quantity,client):
@@ -119,23 +125,16 @@ def pipeline_metrics(quantity,client):
 
 # Run the main code with metrics chosen
 def run_main_code(client):
-    client.publish('reset_count','reset')
+    # Call pipeline fuction with fibonacci's number
     pipeline_metrics(8,client)
-    
-    client.publish('reset_count','reset')
     pipeline_metrics(13,client)
-    
-    client.publish('reset_count','reset')
-    pipeline_metrics(21,client)
-    
-    client.publish('reset_count','reset')
-    pipeline_metrics(34,client)
-    
-    client.publish('reset_count','reset')
+    pipeline_metrics(21,client)    
+    pipeline_metrics(34,client)    
     pipeline_metrics(55,client)
 
 # main code
 def count_message(quantity, client):
+    get_metrics()
     i=0
     timeStart = perf_counter()
     while True:
@@ -149,27 +148,7 @@ def count_message(quantity, client):
             break
     timeEnd = perf_counter()
     timeTotal = timeEnd - timeStart
-    client.publish('time',timeTotal)
-
-# Bar chart with average metric values
-def bar_chart(yMinInterval,yMaxInterval,Y,X,nameImage):
-    
-    fig, ax = plt.subplots()
-    rects = ax.bar(X, Y)
-    ax.set_title('Time process per publisher')
-    ax.set_ylabel('Time')    
-    ax.set_xlabel('Quantity of topics')
-    
-    ax.set_ylim([yMinInterval*0.995,yMaxInterval*1.005])
-    
-    # Make some labels.
-    for rect in rects:
-        height = rect.get_height()
-        ax.text(rect.get_x() + rect.get_width()/2., 1.00001*height,
-                '%.2f' % float(height),
-                ha='center', va='bottom')
-
-    plt.savefig('../data/publisher/barChart_'+nameImage+'.png')
+    get_metrics()
 
 # Line chart with average metric values
 def line_chart(Y,X, nameImage, id_pub):
@@ -191,6 +170,7 @@ def boxPlot_chart(Y,X, nameImage, id_pub):
     df = df.explode('Metric')
     sns.set(style = "whitegrid")
     snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
+    # snsBoxPlot = sns.boxplot(x=df["Metric"]).set_title('Time process per publisher '+nameImage)
     snsBoxPlot.figure.savefig('../data/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
     plt.clf()
 
@@ -207,14 +187,13 @@ def create_graphs(id_pub):
     memInfoTotalMetrics = []
     diskUsageTotalMetrics = []
    
-
     for i in averageMetricsArrayGraph:
         cpuTimeAverage.append(i['cpuTimeArray'])
         cpuTimePIDAverage.append(i['cpuTimePIDArray'])
         memVirtualAverage.append(i['memVirtualArray'])
         memInfoAverage.append(i['memInfoArray'])
         diskUsageAverage.append(i['diskUsageArray'])
-
+    
     for i in totalMetricsArrayGraph:
         cpuTimeTotalMetrics.append(i['cpuTimeArray'])
         cpuTimePIDTotalMetrics.append(i['cpuTimePIDArray'])
@@ -222,35 +201,6 @@ def create_graphs(id_pub):
         memInfoTotalMetrics.append(i['memInfoArray'])
         diskUsageTotalMetrics.append(i['diskUsageArray'])
     
-    # Get all values for interval y axis
-    sortArrMinMax = cpuTimeAverage
-    sortArrMinMax.sort()
-    minCpuTimeAvg = sortArrMinMax[0]
-    maxCpuTimeAvg = sortArrMinMax[-1]
-    sortArrMinMax = cpuTimePIDAverage
-    sortArrMinMax.sort()
-    minCpuTimePIDAvg = sortArrMinMax[0]
-    maxCpuTimePIDAvg = sortArrMinMax[-1]
-    sortArrMinMax = memVirtualAverage
-    sortArrMinMax.sort()
-    minMemVirtualAvg = sortArrMinMax[0]
-    maxMemVirtualAvg = sortArrMinMax[-1]
-    sortArrMinMax = memInfoAverage
-    sortArrMinMax.sort()
-    minMemInfoAvg = sortArrMinMax[0]
-    maxMemInfoAvg = sortArrMinMax[-1]
-    sortArrMinMax = diskUsageAverage
-    sortArrMinMax.sort()
-    minDiskUsageAvg = sortArrMinMax[0]
-    maxDiskUsageAvg = sortArrMinMax[-1]
-    
-    # Call function to create a bar chart
-    # bar_chart(minCpuTimeAvg,maxCpuTimeAvg,cpuTimeAverage,axX, 'CpuTimeAverage')
-    # bar_chart(minCpuTimePIDAvg,maxCpuTimePIDAvg,cpuTimePIDAverage,axX, 'CpuTimePIDAverage')
-    # bar_chart(minMemVirtualAvg,maxMemVirtualAvg,memVirtualAverage,axX, 'MemVirtualAverage')
-    # bar_chart(minMemInfoAvg,maxMemInfoAvg,memInfoAverage,axX, 'MemInfoAverage')
-    # bar_chart(minDiskUsageAvg,maxDiskUsageAvg,diskUsageAverage,axX, 'DiskUsageAverage')
-
     # Create directory with the id of the publisher
     Path("../data/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
     
@@ -281,11 +231,14 @@ def main(args):
     print(id_pub)
     # Read config file passed as argument
     config = read_config_file(args)
+    
     # Connection with client paho.mqtt api
     client = mqtt.Client()
     client.connect(config['hostIP'], config['port'], config['keepAlive'])
+    
     # Declaring all metrics
     get_metrics()
+
     # Metrics about quantity of publicationsX
     run_main_code(client)
 
@@ -295,8 +248,6 @@ def main(args):
     # Send metrics to subscriber
     send_metrics(client)
     
-    # Send message that this publisher finished
-    client.publish('finished', 'finished' , qos=1)
     print("####### Vai desconectar ######")
     # End client mqtt
     client.disconnect()
