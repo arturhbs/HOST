@@ -1,0 +1,28 @@
+version: '3' # version of docker-compose
+networks:
+    publisherNet:
+    subscribeNet:
+services:
+    publisher:
+        image: python:3.6
+        volumes: 
+            - ./publisher:/app
+            - ./data/publisher:/data/publisher
+            - ./config:/config
+        working_dir: /app
+        command:  ./pub.sh
+        networks:
+            - publisherNet
+        depends_on: 
+            - subscriber        
+    subscriber:
+        image: python:3.6
+        volumes: 
+            - ./subscriber:/app
+            - ./data/subscriber:/data/subscriber
+            - ./config:/config
+        working_dir: /app
+        command:  ./sub.sh
+        networks:
+            - subscribeNet
+        
