@@ -18,7 +18,8 @@ memInfoArray = []
 diskUsageArray = []
 averageMetricsArrayGraph = []
 totalMetricsArrayGraph = []
-axX = []
+axXQtyLoop = []
+axXQtyTopics = []
 
 
 # Initialize constants
@@ -116,7 +117,8 @@ def send_metrics(client):
 def pipeline_metrics(qtyLoop,client,qtyTopics):
     count_message_n_topics(qtyLoop, client,qtyTopics)
     # get values for axes X in graphs
-    axX.append(qtyLoop)
+    axXQtyLoop.append(qtyLoop)
+    axXQtyTopics.append(qtyTopics)
     averageMetrics = get_average_metrics_values()
     averageMetricsArrayGraph.append(averageMetrics)
     totalMetrics = get_all_metrics_values()
@@ -158,20 +160,25 @@ def line_chart(Y,X, nameImage, id_pub):
     df['Metric'] = 'value'
     sns.set(style = "whitegrid")
     snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
-                   markers=True,   style='Metric' ,data=df).set_title('Time process per publisher '+nameImage)
+                   markers=True,   style='Metric' ,data=df)
+   
+    snsLinePlot.set_xlabel("QtyLoop")
+    snsLinePlot.set_ylabel(nameImage)
+    snsLinePlot.set_title('Average Time Process Per Publisher')
 
     snsLinePlot.figure.savefig('../data/publisher/'+id_pub +'/lineChart_'+nameImage+'.png')
     plt.clf()
 
 # Boxplot chart with average metric values
-def boxPlot_chart(Y,X, nameImage, id_pub):
+def boxPlot_chart(Y,XLoop, XTopics,nameImage, id_pub):
     plt.clf()
-    df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Metric']) 
+    df = pd.DataFrame(list(zip(XLoop,XTopics, Y)), columns =['QtyLoop','QtyTopic','Metric'])    
     df = df.explode('Metric')
     sns.set(style = "whitegrid")
-    snsBoxPlot = sns.boxplot(x="Fibonacci", y="Metric",data=df).set_title('Time process per publisher '+nameImage)
-    # snsBoxPlot = sns.boxplot(x=df["Metric"]).set_title('Time process per publisher '+nameImage)
-    snsBoxPlot.figure.savefig('../data/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
+    snsBoxPlot = sns.catplot(x="QtyLoop", y="Metric",col="QtyTopic",
+                                data=df,  kind="box", height=4, aspect=.7)
+    snsBoxPlot.set(ylabel = nameImage)
+    snsBoxPlot.savefig('../data/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
     plt.clf()
 
 # Create all graphs necessary, calling functions of charts
@@ -205,18 +212,20 @@ def create_graphs(id_pub):
     Path("../data/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
     
     # Call function to create a line chart
-    line_chart(cpuTimeAverage,axX , 'CpuTimeAverage', id_pub)
-    line_chart(cpuTimePIDAverage,axX, 'CpuTimePIDAverage',id_pub)
-    line_chart(memVirtualAverage,axX, 'MemVirtualAverage', id_pub)
-    line_chart(memInfoAverage,axX, 'MemInfoAverage', id_pub)
-    line_chart(diskUsageAverage,axX, 'DiskUsageAverage', id_pub)
+    line_chart(cpuTimeAverage,axXQtyLoop , 'CpuTimeAverage', id_pub)
+    line_chart(cpuTimePIDAverage,axXQtyLoop, 'CpuTimePIDAverage',id_pub)
+    line_chart(memVirtualAverage,axXQtyLoop, 'MemVirtualAverage', id_pub)
+    line_chart(memInfoAverage,axXQtyLoop, 'MemInfoAverage', id_pub)
+    line_chart(diskUsageAverage,axXQtyLoop, 'DiskUsageAverage', id_pub)
     
     # Call function to create a box plot chart
-    boxPlot_chart(cpuTimeTotalMetrics,axX , 'CpuTimeTotalMetrics', id_pub)
-    boxPlot_chart(cpuTimePIDTotalMetrics,axX, 'CpuTimePIDTotalMetrics', id_pub)
-    boxPlot_chart(memVirtualTotalMetrics,axX, 'MemVirtualTotalMetrics', id_pub)
-    boxPlot_chart(memInfoTotalMetrics,axX, 'MemInfoTotalMetrics', id_pub)
-    boxPlot_chart(diskUsageTotalMetrics,axX, 'DiskUsageTotalMetrics', id_pub)
+
+
+    boxPlot_chart(cpuTimeTotalMetrics,axXQtyLoop , axXQtyTopics, 'CpuTimeTotalMetrics', id_pub)
+    boxPlot_chart(cpuTimePIDTotalMetrics,axXQtyLoop,axXQtyTopics, 'CpuTimePIDTotalMetrics', id_pub)
+    boxPlot_chart(memVirtualTotalMetrics,axXQtyLoop, axXQtyTopics, 'MemVirtualTotalMetrics', id_pub)
+    boxPlot_chart(memInfoTotalMetrics,axXQtyLoop,axXQtyTopics, 'MemInfoTotalMetrics', id_pub)
+    boxPlot_chart(diskUsageTotalMetrics,axXQtyLoop,axXQtyTopics, 'DiskUsageTotalMetrics', id_pub)
 
 # Read config file that user can modify 
 def read_config_file(args):
