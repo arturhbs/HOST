@@ -44,7 +44,7 @@ def get_average_metrics_values():
 def get_all_metrics_values():
     # With [:] it is passing the value, not the pointer
     dictTotalMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
-    dictTotalMetrics['cpuTimeArray'] = cpuTimeArray[:]
+    dictTotalMetrics['cpuTimeArray'] = cpuTimeArray[:] 
     dictTotalMetrics['cpuTimePIDArray'] = cpuTimePIDArray[:]
     dictTotalMetrics['memVirtualArray'] = memVirtualArray[:]
     dictTotalMetrics['memInfoArray'] = memInfoArray[:]
@@ -113,10 +113,10 @@ def send_metrics(client):
             print("Value i that got error was: ", i)
 
 # Sent value of quantity publications for the graph
-def pipeline_metrics(quantity,client):
-    count_message(quantity, client)
+def pipeline_metrics(qtyLoop,client,qtyTopics):
+    count_message_n_topics(qtyLoop, client,qtyTopics)
     # get values for axes X in graphs
-    axX.append(quantity)
+    axX.append(qtyLoop)
     averageMetrics = get_average_metrics_values()
     averageMetricsArrayGraph.append(averageMetrics)
     totalMetrics = get_all_metrics_values()
@@ -125,30 +125,30 @@ def pipeline_metrics(quantity,client):
 
 # Run the main code with metrics chosen
 def run_main_code(client):
-    # Call pipeline fuction with fibonacci's number
-    pipeline_metrics(8,client)
-    pipeline_metrics(13,client)
-    pipeline_metrics(21,client)    
-    pipeline_metrics(34,client)    
-    pipeline_metrics(55,client)
+    # Call pipeline fuction with fibonacci's number 
+    # Parameters for pipeline_metrics: qty for loop; client mqtt, qty of topics to send
+    fibonacciQtyLoop = [8,13,21,34,55]
+    fibonacciQtyTopics = [1,2,3,5,8]
+    
+    for i in fibonacciQtyLoop:
+        for j in fibonacciQtyTopics:
+            pipeline_metrics(i,client,j)
 
 # main code
-def count_message(quantity, client):
-    get_metrics()
-    i=0
-    timeStart = perf_counter()
-    while True:
+def count_message_n_topics(qtyLoop, client, qtyTopics):
+    for i in range(qtyLoop) :
+        # timeStart = perf_counter()
         get_metrics()
         time.sleep(1)
-        i+=1
         message=str(i)
-        if i <=quantity:
-            client.publish('count',message)
-        else:
-            break
-    timeEnd = perf_counter()
-    timeTotal = timeEnd - timeStart
-    get_metrics()
+        for j in range(qtyTopics):
+            randomTopic = str(uuid.uuid4())
+            wait = client.publish(randomTopic,message)
+            wait.wait_for_publish()
+       
+        # timeEnd = perf_counter()
+        # timeTotal = timeEnd - timeStart
+        get_metrics()
 
 # Line chart with average metric values
 def line_chart(Y,X, nameImage, id_pub):
@@ -228,7 +228,7 @@ def main(args):
     # Get id for publisher
     id_pub = str(uuid.uuid4()) 
     print("**** ID *****")
-    print(id_pub)
+    print(id_pub) 
     # Read config file passed as argument
     config = read_config_file(args)
     
