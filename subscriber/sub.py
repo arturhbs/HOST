@@ -35,8 +35,8 @@ def on_message(client, userdata, msg):
 
 # Identify message recieved
 def read_message(topic,msgMetric,msgIndex):
-    # print('topic = ', topic)
-    # print('msg index', msgIndex)
+    print('topic = ', topic)
+    print('msg index', msgIndex)
     if topic == 'cpuTimeAvg':
         # Get metric for 8 loops
         if msgIndex == 0:
@@ -126,7 +126,8 @@ def read_message(topic,msgMetric,msgIndex):
             
         elif msgIndex == 4:   
             metricAvg['diskUsageAvg_ax4'].append(msgMetric)
-   
+
+    print("\n####################\n LEN diskusage == ",len(metricAvg['diskUsageAvg_ax4']))
     if(len(metricAvg['diskUsageAvg_ax4']) == 5 ):
         create_graph()
    
@@ -137,7 +138,11 @@ def line_chart(X,Y, nameImage):
     df['Metric'] = 'value'
     sns.set(style = "whitegrid")
     snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
-                   markers=True,   style='Metric' ,data=df).set_title(nameImage)
+                   markers=True,   style='Metric' ,data=df)
+
+    snsLinePlot.set_xlabel("QtyLoop")
+    snsLinePlot.set_ylabel(nameImage)
+    snsLinePlot.set_title('Average Time Process Per Publisher')
 
     snsLinePlot.figure.savefig('../data/subscriber/lineChart_'+nameImage+'.png')
     plt.clf()
