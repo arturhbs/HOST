@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import uuid
 from pathlib import Path
+import math  
+
 
 cpuTimeArray = []
 cpuTimePIDArray = []
@@ -86,28 +88,68 @@ def get_metrics():
 
 # Send all metrics to subscribe
 def send_metrics(client):
-    # print(averageMetricsArrayGraph)
+  
+    # Get the average of the averages metric got (we have got metric of qtyLoop with qtyTopic, so it is needed to get the avg of that)
+   
+    dictAvgMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
+    AvgMetrics = []
+    avgCpu = []
+    avgCpuPID = []
+    memVirtual = []
+    memInfo = []
+    diskUsage = []
+    sizeTopicArray=math.sqrt(len(axXQtyTopics))
+    j=0
+    for i in averageMetricsArrayGraph:
+        j+=1
+        avgCpu.append(i['cpuTimeArray'])
+        avgCpuPID.append(i['cpuTimePIDArray'])
+        memVirtual.append(i['memVirtualArray'])
+        memInfo.append(i['memInfoArray'])
+        diskUsage.append(i['diskUsageArray'])
+        if(j==sizeTopicArray):
+            j=0
+            dictAvgMetrics['cpuTimeArray'] = statistics.mean(avgCpu)
+            dictAvgMetrics['cpuTimePIDArray'] = statistics.mean(avgCpuPID)
+            dictAvgMetrics['memVirtualArray'] = statistics.mean(memVirtual)
+            dictAvgMetrics['memInfoArray'] = statistics.mean(memInfo)
+            dictAvgMetrics['diskUsageArray'] = statistics.mean(diskUsage)
+            print("\ndictAvg\n",dictAvgMetrics)
+            AvgMetrics.append(dictAvgMetrics)
+            dictAvgMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
+            avgCpu.clear()
+            avgCpuPID.clear()
+            memVirtual.clear()
+            memInfo.clear()
+            diskUsage.clear()
+        
+
+    print(AvgMetrics)    
+
+
+    # Run thread in background to look if the publish was effective
     client.loop_start()
-    for i in range(5):
+    # Loop for all the five loop metrics
+    for i in range(int(math.sqrt(len(axXQtyLoop)))):
         try:
             # Send cpuTime metric
-            waitForPublisher = client.publish('cpuTimeAvg', str(averageMetricsArrayGraph[i]['cpuTimeArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('cpuTimeAvg', str(AvgMetrics[i]['cpuTimeArray']) + ',' + str(i), qos=1)
             waitForPublisher.wait_for_publish()
            
             # Send cpuTimePID metric
-            waitForPublisher = client.publish('cpuTimePIDAvg', str(averageMetricsArrayGraph[i]['cpuTimePIDArray']) + ',' + str(i), qos=1,retain=False) 
+            waitForPublisher = client.publish('cpuTimePIDAvg', str(AvgMetrics[i]['cpuTimePIDArray']) + ',' + str(i), qos=1,retain=False) 
             waitForPublisher.wait_for_publish()
 
             # Send memVirtual metric
-            waitForPublisher = client.publish('memVirtualAvg', str(averageMetricsArrayGraph[i]['memVirtualArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('memVirtualAvg', str(AvgMetrics[i]['memVirtualArray']) + ',' + str(i), qos=1)
             waitForPublisher.wait_for_publish()
 
             # Send memInfo metric
-            waitForPublisher = client.publish('memInfoAvg', str(averageMetricsArrayGraph[i]['memInfoArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('memInfoAvg', str(AvgMetrics[i]['memInfoArray']) + ',' + str(i), qos=1)
             waitForPublisher.wait_for_publish()
 
             # Send diskUsage metric
-            waitForPublisher = client.publish('diskUsageAvg', str(averageMetricsArrayGraph[i]['diskUsageArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('diskUsageAvg', str(AvgMetrics[i]['diskUsageArray']) + ',' + str(i), qos=1)
             waitForPublisher.wait_for_publish()
 
         except ErrorSendingMessage:
@@ -129,7 +171,7 @@ def pipeline_metrics(qtyLoop,client,qtyTopics):
 def run_main_code(client):
     # Call pipeline fuction with fibonacci's number 
     # Parameters for pipeline_metrics: qty for loop; client mqtt, qty of topics to send
-    fibonacciQtyLoop = [8,13,21,34,55]
+    fibonacciQtyLoop = [1,2,3,4,5]
     fibonacciQtyTopics = [1,2,3,5,8]
     
     for i in fibonacciQtyLoop:
