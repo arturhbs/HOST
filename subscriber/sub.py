@@ -35,8 +35,8 @@ def on_message(client, userdata, msg):
 
 # Identify message recieved
 def read_message(topic,msgMetric,msgIndex):
-    print('topic = ', topic)
-    print('msg index', msgIndex)
+    # print('topic = ', topic)
+    # print('msg index', msgIndex)
     if topic == 'cpuTimeAvg':
         # Get metric for 8 loops
         if msgIndex == 0:
@@ -135,6 +135,8 @@ def read_message(topic,msgMetric,msgIndex):
 def line_chart(X,Y, nameImage):
     plt.clf()
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','value']) 
+    print("\ndf = \n",df)
+    # df = df.groupby(['Fibonacci'],as_index=False).mean()
     df['Metric'] = 'value'
     sns.set(style = "whitegrid")
     snsLinePlot = sns.lineplot(x="Fibonacci", y="value",

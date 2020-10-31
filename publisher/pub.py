@@ -174,8 +174,8 @@ def run_main_code(client):
     fibonacciQtyLoop = [1,2,3,4,5]
     fibonacciQtyTopics = [1,2,3,5,8]
     
-    for i in fibonacciQtyLoop:
-        for j in fibonacciQtyTopics:
+    for j in fibonacciQtyTopics:
+        for i in fibonacciQtyLoop:
             pipeline_metrics(i,client,j)
 
 # main code
@@ -199,7 +199,9 @@ def line_chart(Y,X, nameImage, id_pub):
 
     plt.clf()
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','value']) 
+    df = df.groupby(['Fibonacci'],as_index=False).mean()
     df['Metric'] = 'value'
+
     sns.set(style = "whitegrid")
     snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
                    markers=True,   style='Metric' ,data=df)
