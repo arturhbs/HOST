@@ -192,24 +192,28 @@ def count_message_n_topics(qtyLoop, client, qtyTopics):
         get_metrics()
 
 # Line chart with average metric values
-def line_chart(Y,X, nameImage, id_pub):
+def line_chart(Y,XLoop,XTopics, nameImage, id_pub):
 
     plt.clf()
     # Creating dataframe pandas with the data to plot
-    df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Value']) 
-    print(df.info())
-    df['Topic'] = 5*[1,2,3,4,5]
+
+    df = pd.DataFrame(list(zip(XLoop,XTopics, Y)), columns =['Loops','Topics','Value']) 
+    # df["Topics"] = ["$%s$" % x for x in df["Topics"]]
     # Create csv file
     df.to_csv(r'../data/csv/publisher/'+id_pub+'/linechart_'+ nameImage +'_' +  id_pub +'.csv',index=False)
+
+    # set color to each lineplot
     sns.set(style = "whitegrid")
-    snsLinePlot = sns.lineplot(x="Fibonacci", y="Value",
-                   markers=True,   style='Topic' ,data=df)
+    snsLinePlot = sns.lineplot(x="Loops", y="Value",markers=["o", "o","o","o","o"], 
+                                 hue='Topics', style="Topics",legend="full",palette=["C0", "C1", "C2", "C3","C4"],data=df)
    
     snsLinePlot.set_xlabel("QtyLoop")
     snsLinePlot.set_ylabel(nameImage)
     snsLinePlot.set_title('Average Time Process Per Publisher')
+    snsLinePlot.legend(loc='center right', bbox_to_anchor=(1.25, 0.5), ncol=1)
+    # sns.color_palette("Paired")
 
-    snsLinePlot.figure.savefig('../data/graphics/publisher/'+id_pub +'/lineChart_'+nameImage+'.png')
+    snsLinePlot.figure.savefig('../data/graphics/publisher/'+id_pub +'/lineChart_'+nameImage+'.png',bbox_inches='tight')
     plt.clf()
 
 # Boxplot chart with average metric values
@@ -261,11 +265,11 @@ def create_graphs_csv(id_pub):
     Path("../data/graphics/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
     
     # Call function to create a line chart
-    line_chart(cpuTimeAverage,axXQtyLoop , 'CpuTimeAverage', id_pub)
-    line_chart(cpuTimePIDAverage,axXQtyLoop, 'CpuTimePIDAverage',id_pub)
-    line_chart(memVirtualAverage,axXQtyLoop, 'MemVirtualAverage', id_pub)
-    line_chart(memInfoAverage,axXQtyLoop, 'MemInfoAverage', id_pub)
-    line_chart(diskUsageAverage,axXQtyLoop, 'DiskUsageAverage', id_pub)
+    line_chart(cpuTimeAverage,axXQtyLoop, axXQtyTopics,'CpuTimeAverage', id_pub)
+    line_chart(cpuTimePIDAverage,axXQtyLoop,axXQtyTopics, 'CpuTimePIDAverage',id_pub)
+    line_chart(memVirtualAverage,axXQtyLoop, axXQtyTopics,'MemVirtualAverage', id_pub)
+    line_chart(memInfoAverage,axXQtyLoop, axXQtyTopics,'MemInfoAverage', id_pub)
+    line_chart(diskUsageAverage,axXQtyLoop, axXQtyTopics,'DiskUsageAverage', id_pub)
     
     # Call function to create a box plot chart
 
