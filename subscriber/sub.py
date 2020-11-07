@@ -131,13 +131,15 @@ def read_message(topic,msgMetric,msgIndex):
     if(len(metricAvg['diskUsageAvg_ax4']) == 5 ):
         create_graph()
    
-
 def line_chart(X,Y, nameImage):
     plt.clf()
     df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','value']) 
     print("\ndf = \n",df)
     # df = df.groupby(['Fibonacci'],as_index=False).mean()
     df['Metric'] = 'value'
+    # Create csv file
+    df.to_csv(r'../data/csv/subscriber/linechart_'+nameImage+'.csv',index=False)
+
     sns.set(style = "whitegrid")
     snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
                    markers=True,   style='Metric' ,data=df)
@@ -146,7 +148,7 @@ def line_chart(X,Y, nameImage):
     snsLinePlot.set_ylabel(nameImage)
     snsLinePlot.set_title('Average Time Process Per Publisher')
 
-    snsLinePlot.figure.savefig('../data/subscriber/lineChart_'+nameImage+'.png')
+    snsLinePlot.figure.savefig('../data/graphics/subscriber/lineChart_'+nameImage+'.png')
     plt.clf()
 
 def transform_data_for_graph():

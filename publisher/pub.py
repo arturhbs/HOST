@@ -114,7 +114,7 @@ def send_metrics(client):
             dictAvgMetrics['memVirtualArray'] = statistics.mean(memVirtual)
             dictAvgMetrics['memInfoArray'] = statistics.mean(memInfo)
             dictAvgMetrics['diskUsageArray'] = statistics.mean(diskUsage)
-            print("\ndictAvg\n",dictAvgMetrics)
+            # print("\ndictAvg\n",dictAvgMetrics)
             AvgMetrics.append(dictAvgMetrics)
             dictAvgMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
             avgCpu.clear()
@@ -124,7 +124,7 @@ def send_metrics(client):
             diskUsage.clear()
         
 
-    print(AvgMetrics)    
+    # print(AvgMetrics)    
 
 
     # Run thread in background to look if the publish was effective
@@ -181,7 +181,6 @@ def run_main_code(client):
 # main code
 def count_message_n_topics(qtyLoop, client, qtyTopics):
     for i in range(qtyLoop) :
-        # timeStart = perf_counter()
         get_metrics()
         time.sleep(1)
         message=str(i)
@@ -190,27 +189,27 @@ def count_message_n_topics(qtyLoop, client, qtyTopics):
             wait = client.publish(randomTopic,message)
             wait.wait_for_publish()
        
-        # timeEnd = perf_counter()
-        # timeTotal = timeEnd - timeStart
         get_metrics()
 
 # Line chart with average metric values
 def line_chart(Y,X, nameImage, id_pub):
 
     plt.clf()
-    df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','value']) 
-    df = df.groupby(['Fibonacci'],as_index=False).mean()
-    df['Metric'] = 'value'
-
+    # Creating dataframe pandas with the data to plot
+    df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','Value']) 
+    print(df.info())
+    df['Topic'] = 5*[1,2,3,4,5]
+    # Create csv file
+    df.to_csv(r'../data/csv/publisher/'+id_pub+'/linechart_'+ nameImage +'_' +  id_pub +'.csv',index=False)
     sns.set(style = "whitegrid")
-    snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
-                   markers=True,   style='Metric' ,data=df)
+    snsLinePlot = sns.lineplot(x="Fibonacci", y="Value",
+                   markers=True,   style='Topic' ,data=df)
    
     snsLinePlot.set_xlabel("QtyLoop")
     snsLinePlot.set_ylabel(nameImage)
     snsLinePlot.set_title('Average Time Process Per Publisher')
 
-    snsLinePlot.figure.savefig('../data/publisher/'+id_pub +'/lineChart_'+nameImage+'.png')
+    snsLinePlot.figure.savefig('../data/graphics/publisher/'+id_pub +'/lineChart_'+nameImage+'.png')
     plt.clf()
 
 # Boxplot chart with average metric values
@@ -218,15 +217,18 @@ def boxPlot_chart(Y,XLoop, XTopics,nameImage, id_pub):
     plt.clf()
     df = pd.DataFrame(list(zip(XLoop,XTopics, Y)), columns =['QtyLoop','QtyTopic','Metric'])    
     df = df.explode('Metric')
+    # Create csv file
+    df.to_csv(r'../data/csv/publisher/'+id_pub+'/boxplot_'+ nameImage +'_' + id_pub +'.csv',index=False)
+
     sns.set(style = "whitegrid")
     snsBoxPlot = sns.catplot(x="QtyLoop", y="Metric",col="QtyTopic",
                                 data=df,  kind="box", height=4, aspect=.7)
     snsBoxPlot.set(ylabel = nameImage)
-    snsBoxPlot.savefig('../data/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
+    snsBoxPlot.savefig('../data/graphics/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
     plt.clf()
 
-# Create all graphs necessary, calling functions of charts
-def create_graphs(id_pub):
+# Create all graphs necessary, calling functions of charts and inside that functions are the csv creation due to the complete dataframe of each graph
+def create_graphs_csv(id_pub):
     cpuTimeAverage = []
     cpuTimePIDAverage = []
     memVirtualAverage = []
@@ -237,7 +239,7 @@ def create_graphs(id_pub):
     memVirtualTotalMetrics = []
     memInfoTotalMetrics = []
     diskUsageTotalMetrics = []
-   
+    # print("\ncputimearray\n", averageMetricsArrayGraph)
     for i in averageMetricsArrayGraph:
         cpuTimeAverage.append(i['cpuTimeArray'])
         cpuTimePIDAverage.append(i['cpuTimePIDArray'])
@@ -252,8 +254,11 @@ def create_graphs(id_pub):
         memInfoTotalMetrics.append(i['memInfoArray'])
         diskUsageTotalMetrics.append(i['diskUsageArray'])
     
+    # print("\ncputimearray\n", cpuTimeAverage)
+    # print("\ncputimearray\n", len(cpuTimeAverage))
     # Create directory with the id of the publisher
-    Path("../data/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
+    Path("../data/csv/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
+    Path("../data/graphics/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
     
     # Call function to create a line chart
     line_chart(cpuTimeAverage,axXQtyLoop , 'CpuTimeAverage', id_pub)
@@ -296,7 +301,7 @@ def main(args):
     run_main_code(client)
 
     # Create graph
-    create_graphs(id_pub)
+    create_graphs_csv(id_pub)
 
     # Send metrics to subscriber
     send_metrics(client)
@@ -306,6 +311,11 @@ def main(args):
     client.disconnect()
 
 if __name__ == "__main__":
+    # See total duration of the process
+    timeStart = perf_counter()
     time.sleep(4)
     args = sys.argv 
     main(args)    
+    timeEnd = perf_counter()
+    timeTotal = timeEnd - timeStart
+    print("Process duration: ", timeTotal/60," minutes")
