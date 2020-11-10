@@ -31,51 +31,54 @@ def on_message(client, userdata, msg):
     messageSplit = message.split(sep=',')
     messageMetric = float(messageSplit[0])
     messageIndex = int(messageSplit[1])
-    read_message(msg.topic,messageMetric,messageIndex)
+    messageId = int(messageSplit[2])
+    read_message(msg.topic,messageMetric,messageIndex,messageId)
 
 # Identify message recieved
-def read_message(topic,msgMetric,msgIndex):
-    # print('topic = ', topic)
-    # print('msg index', msgIndex)
+def read_message(topic,msgMetric,msgIndex, msgId):
+    print('topic = ', topic)
+    print('msg index', msgIndex)
+    print('msg id', msgId)
+    
     if topic == 'cpuTimeAvg':
-        # Get metric for 8 loops
+        # Get metric for 1 topics
         if msgIndex == 0:
             metricAvg['cpuTimeAvg_ax0'].append(msgMetric)
             
-        # Get metric for 13 loops
+        # Get metric for 2 topics
         elif msgIndex == 1:   
             metricAvg['cpuTimeAvg_ax1'].append(msgMetric)
 
-        # Get metric for 21 loops
+        # Get metric for 3 topics
         elif msgIndex == 2:   
             metricAvg['cpuTimeAvg_ax2'].append(msgMetric)
             
-        # Get metric for 34 loops
+        # Get metric for 5 topics
         elif msgIndex == 3:   
             metricAvg['cpuTimeAvg_ax3'].append(msgMetric)
             
-        # Get metric for 55 loops
+        # Get metric for 8 topics
         elif msgIndex == 4:   
             metricAvg['cpuTimeAvg_ax4'].append(msgMetric)
             
     elif topic == 'cpuTimePIDAvg':
-        # Get metric for 8 loops
+        # Get metric for 1 topics
         if msgIndex == 0:
             metricAvg['cpuTimePIDAvg_ax0'].append(msgMetric)
             
-        # Get metric for 13 loops
+        # Get metric for 2 topics
         elif msgIndex == 1:   
             metricAvg['cpuTimePIDAvg_ax1'].append(msgMetric)
 
-        # Get metric for 21 loops
+        # Get metric for 3 topics
         elif msgIndex == 2:   
             metricAvg['cpuTimePIDAvg_ax2'].append(msgMetric)
             
-        # Get metric for 34 loops
+        # Get metric for 5 topics
         elif msgIndex == 3:   
             metricAvg['cpuTimePIDAvg_ax3'].append(msgMetric)
 
-        # Get metric for 55 loops
+        # Get metric for 8 topics
         elif msgIndex == 4:   
             metricAvg['cpuTimePIDAvg_ax4'].append(msgMetric)
             
@@ -163,7 +166,7 @@ def transform_data_for_graph():
         if len(metricAvg[metric]) != 0 :
             metricAvg[metric] = statistics.mean(metricAvg[metric])
                     
-    fibonacci = ['8','13','21','34','55']
+    fibonacci = ['1','2','3','5','8']
     for i in range(5):
         i = str(i)
         cpuTimeArray.append(metricAvg['cpuTimeAvg_ax'+i])

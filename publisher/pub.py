@@ -88,7 +88,7 @@ def get_metrics():
     diskUsageArray.append(diskUsage[1])
 
 # Send all metrics to subscribe
-def send_metrics(client):
+def send_metrics(client, idThread):
   
     # Get the average of the averages metric got (we have got metric of qtyLoop with qtyTopic, so it is needed to get the avg of that)
    
@@ -130,23 +130,23 @@ def send_metrics(client):
     for i in range(int(sizeTopicArray)):
         try:
             # Send cpuTime metric
-            waitForPublisher = client.publish('cpuTimeAvg', str(AvgMetrics[i]['cpuTimeArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('cpuTimeAvg', str(AvgMetrics[i]['cpuTimeArray']) + ',' + str(i) + ',' + idThread, qos=1)
             waitForPublisher.wait_for_publish()
            
             # Send cpuTimePID metric
-            waitForPublisher = client.publish('cpuTimePIDAvg', str(AvgMetrics[i]['cpuTimePIDArray']) + ',' + str(i), qos=1,retain=False) 
+            waitForPublisher = client.publish('cpuTimePIDAvg', str(AvgMetrics[i]['cpuTimePIDArray']) + ',' + str(i) + ',' + idThread, qos=1) 
             waitForPublisher.wait_for_publish()
 
             # Send memVirtual metric
-            waitForPublisher = client.publish('memVirtualAvg', str(AvgMetrics[i]['memVirtualArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('memVirtualAvg', str(AvgMetrics[i]['memVirtualArray']) + ',' + str(i) + ',' + idThread, qos=1)
             waitForPublisher.wait_for_publish()
 
             # Send memInfo metric
-            waitForPublisher = client.publish('memInfoAvg', str(AvgMetrics[i]['memInfoArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('memInfoAvg', str(AvgMetrics[i]['memInfoArray']) + ',' + str(i) + ',' + idThread, qos=1)
             waitForPublisher.wait_for_publish()
 
             # Send diskUsage metric
-            waitForPublisher = client.publish('diskUsageAvg', str(AvgMetrics[i]['diskUsageArray']) + ',' + str(i), qos=1)
+            waitForPublisher = client.publish('diskUsageAvg', str(AvgMetrics[i]['diskUsageArray']) + ',' + str(i) + ',' + idThread, qos=1)
             waitForPublisher.wait_for_publish()
 
         except ValueError:
@@ -168,7 +168,7 @@ def pipeline_metrics(qtyLoop,client,qtyTopics):
 def run_main_code(client):
     # Call pipeline fuction with fibonacci's number 
     # Parameters for pipeline_metrics: qty for loop; client mqtt, qty of topics to send
-    fibonacciQtyLoop = [8,13,21,34,55]
+    fibonacciQtyLoop = [1,2,3,4,5]
     fibonacciQtyTopics = [1,2,3,5,8]
     
     for j in fibonacciQtyTopics:
@@ -287,6 +287,7 @@ def main(args):
     # Get thread id for name process of the publisher
     print("**** THREAD ID *****")
     idThread = threading.get_ident()
+    idThread = str(idThread)
     print(idThread)
     # Read config file passed as argument
     config = read_config_file(args)
@@ -305,7 +306,7 @@ def main(args):
     create_graphs_csv(idThread)
 
     # Send metrics to subscriber
-    send_metrics(client)
+    send_metrics(client, idThread)
     
     print("####### Vai desconectar ######")
     # End client mqtt
