@@ -11,6 +11,7 @@ import seaborn as sns
 import uuid
 from pathlib import Path
 import math  
+import threading
 
 
 cpuTimeArray = []
@@ -107,6 +108,7 @@ def send_metrics(client):
         memVirtual.append(i['memVirtualArray'])
         memInfo.append(i['memInfoArray'])
         diskUsage.append(i['diskUsageArray'])
+        # When finish inserting the values in metrics array, it is done the mean of each metric
         if(j==sizeTopicArray):
             j=0
             dictAvgMetrics['cpuTimeArray'] = statistics.mean(avgCpu)
@@ -116,12 +118,7 @@ def send_metrics(client):
             dictAvgMetrics['diskUsageArray'] = statistics.mean(diskUsage)
             # print("\ndictAvg\n",dictAvgMetrics)
             AvgMetrics.append(dictAvgMetrics)
-            dictAvgMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
-            avgCpu.clear()
-            avgCpuPID.clear()
-            memVirtual.clear()
-            memInfo.clear()
-            diskUsage.clear()
+            
         
 
     # print(AvgMetrics)    
@@ -130,7 +127,7 @@ def send_metrics(client):
     # Run thread in background to look if the publish was effective
     client.loop_start()
     # Loop for all the five loop metrics
-    for i in range(int(math.sqrt(len(axXQtyLoop)))):
+    for i in range(int(sizeTopicArray)):
         try:
             # Send cpuTime metric
             waitForPublisher = client.publish('cpuTimeAvg', str(AvgMetrics[i]['cpuTimeArray']) + ',' + str(i), qos=1)
@@ -152,8 +149,8 @@ def send_metrics(client):
             waitForPublisher = client.publish('diskUsageAvg', str(AvgMetrics[i]['diskUsageArray']) + ',' + str(i), qos=1)
             waitForPublisher.wait_for_publish()
 
-        except ErrorSendingMessage:
-            print("Value i that got error was: ", i)
+        except ValueError:
+            print("Error in send message!! Value i that got error was: ", i)
 
 # Sent value of quantity publications for the graph
 def pipeline_metrics(qtyLoop,client,qtyTopics):
@@ -171,7 +168,7 @@ def pipeline_metrics(qtyLoop,client,qtyTopics):
 def run_main_code(client):
     # Call pipeline fuction with fibonacci's number 
     # Parameters for pipeline_metrics: qty for loop; client mqtt, qty of topics to send
-    fibonacciQtyLoop = [1,2,3,4,5]
+    fibonacciQtyLoop = [8,13,21,34,55]
     fibonacciQtyTopics = [1,2,3,5,8]
     
     for j in fibonacciQtyTopics:
@@ -192,7 +189,7 @@ def count_message_n_topics(qtyLoop, client, qtyTopics):
         get_metrics()
 
 # Line chart with average metric values
-def line_chart(Y,XLoop,XTopics, nameImage, id_pub):
+def line_chart(Y,XLoop,XTopics, nameImage, idThread):
 
     plt.clf()
     # Creating dataframe pandas with the data to plot
@@ -200,7 +197,7 @@ def line_chart(Y,XLoop,XTopics, nameImage, id_pub):
     df = pd.DataFrame(list(zip(XLoop,XTopics, Y)), columns =['Loops','Topics','Value']) 
     # df["Topics"] = ["$%s$" % x for x in df["Topics"]]
     # Create csv file
-    df.to_csv(r'../data/csv/publisher/'+id_pub+'/linechart_'+ nameImage +'_' +  id_pub +'.csv',index=False)
+    df.to_csv(r'../data/csv/publisher/'+idThread+'/linechart_'+ nameImage +'_' +  idThread +'.csv',index=False)
 
     # set color to each lineplot
     sns.set(style = "whitegrid")
@@ -210,29 +207,29 @@ def line_chart(Y,XLoop,XTopics, nameImage, id_pub):
     snsLinePlot.set_xlabel("QtyLoop")
     snsLinePlot.set_ylabel(nameImage)
     snsLinePlot.set_title('Average Time Process Per Publisher')
-    snsLinePlot.legend(loc='center right', bbox_to_anchor=(1.25, 0.5), ncol=1)
+    snsLinePlot.legend(loc='center right', bbox_to_anchor=(1.25, 0.5), ncol=1, title='Topics')
     # sns.color_palette("Paired")
 
-    snsLinePlot.figure.savefig('../data/graphics/publisher/'+id_pub +'/lineChart_'+nameImage+'.png',bbox_inches='tight')
+    snsLinePlot.figure.savefig('../data/graphics/publisher/'+idThread +'/lineChart_'+nameImage+'.png',bbox_inches='tight')
     plt.clf()
 
 # Boxplot chart with average metric values
-def boxPlot_chart(Y,XLoop, XTopics,nameImage, id_pub):
+def boxPlot_chart(Y,XLoop, XTopics,nameImage, idThread):
     plt.clf()
     df = pd.DataFrame(list(zip(XLoop,XTopics, Y)), columns =['QtyLoop','QtyTopic','Metric'])    
     df = df.explode('Metric')
     # Create csv file
-    df.to_csv(r'../data/csv/publisher/'+id_pub+'/boxplot_'+ nameImage +'_' + id_pub +'.csv',index=False)
+    df.to_csv(r'../data/csv/publisher/'+idThread+'/boxplot_'+ nameImage +'_' + idThread +'.csv',index=False)
 
     sns.set(style = "whitegrid")
     snsBoxPlot = sns.catplot(x="QtyLoop", y="Metric",col="QtyTopic",
                                 data=df,  kind="box", height=4, aspect=.7)
     snsBoxPlot.set(ylabel = nameImage)
-    snsBoxPlot.savefig('../data/graphics/publisher/'+id_pub +'/boxPlotChart_'+nameImage+'.png')
+    snsBoxPlot.savefig('../data/graphics/publisher/'+idThread +'/boxPlotChart_'+nameImage+'.png')
     plt.clf()
 
 # Create all graphs necessary, calling functions of charts and inside that functions are the csv creation due to the complete dataframe of each graph
-def create_graphs_csv(id_pub):
+def create_graphs_csv(idThread):
     cpuTimeAverage = []
     cpuTimePIDAverage = []
     memVirtualAverage = []
@@ -261,24 +258,24 @@ def create_graphs_csv(id_pub):
     # print("\ncputimearray\n", cpuTimeAverage)
     # print("\ncputimearray\n", len(cpuTimeAverage))
     # Create directory with the id of the publisher
-    Path("../data/csv/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
-    Path("../data/graphics/publisher/"+id_pub).mkdir(parents=True, exist_ok=True)
+    Path("../data/csv/publisher/"+idThread).mkdir(parents=True, exist_ok=True)
+    Path("../data/graphics/publisher/"+idThread).mkdir(parents=True, exist_ok=True)
     
     # Call function to create a line chart
-    line_chart(cpuTimeAverage,axXQtyLoop, axXQtyTopics,'CpuTimeAverage', id_pub)
-    line_chart(cpuTimePIDAverage,axXQtyLoop,axXQtyTopics, 'CpuTimePIDAverage',id_pub)
-    line_chart(memVirtualAverage,axXQtyLoop, axXQtyTopics,'MemVirtualAverage', id_pub)
-    line_chart(memInfoAverage,axXQtyLoop, axXQtyTopics,'MemInfoAverage', id_pub)
-    line_chart(diskUsageAverage,axXQtyLoop, axXQtyTopics,'DiskUsageAverage', id_pub)
+    line_chart(cpuTimeAverage,axXQtyLoop, axXQtyTopics,'CpuTimeAverage', idThread)
+    line_chart(cpuTimePIDAverage,axXQtyLoop,axXQtyTopics, 'CpuTimePIDAverage',idThread)
+    line_chart(memVirtualAverage,axXQtyLoop, axXQtyTopics,'MemVirtualAverage', idThread)
+    line_chart(memInfoAverage,axXQtyLoop, axXQtyTopics,'MemInfoAverage', idThread)
+    line_chart(diskUsageAverage,axXQtyLoop, axXQtyTopics,'DiskUsageAverage', idThread)
     
     # Call function to create a box plot chart
 
 
-    boxPlot_chart(cpuTimeTotalMetrics,axXQtyLoop , axXQtyTopics, 'CpuTimeTotalMetrics', id_pub)
-    boxPlot_chart(cpuTimePIDTotalMetrics,axXQtyLoop,axXQtyTopics, 'CpuTimePIDTotalMetrics', id_pub)
-    boxPlot_chart(memVirtualTotalMetrics,axXQtyLoop, axXQtyTopics, 'MemVirtualTotalMetrics', id_pub)
-    boxPlot_chart(memInfoTotalMetrics,axXQtyLoop,axXQtyTopics, 'MemInfoTotalMetrics', id_pub)
-    boxPlot_chart(diskUsageTotalMetrics,axXQtyLoop,axXQtyTopics, 'DiskUsageTotalMetrics', id_pub)
+    boxPlot_chart(cpuTimeTotalMetrics,axXQtyLoop , axXQtyTopics, 'CpuTimeTotalMetrics', idThread)
+    boxPlot_chart(cpuTimePIDTotalMetrics,axXQtyLoop,axXQtyTopics, 'CpuTimePIDTotalMetrics', idThread)
+    boxPlot_chart(memVirtualTotalMetrics,axXQtyLoop, axXQtyTopics, 'MemVirtualTotalMetrics', idThread)
+    boxPlot_chart(memInfoTotalMetrics,axXQtyLoop,axXQtyTopics, 'MemInfoTotalMetrics', idThread)
+    boxPlot_chart(diskUsageTotalMetrics,axXQtyLoop,axXQtyTopics, 'DiskUsageTotalMetrics', idThread)
 
 # Read config file that user can modify 
 def read_config_file(args):
@@ -287,10 +284,10 @@ def read_config_file(args):
     return config['publisher']
 
 def main(args):
-    # Get id for publisher
-    id_pub = str(uuid.uuid4()) 
-    print("**** ID *****")
-    print(id_pub) 
+    # Get thread id for name process of the publisher
+    print("**** THREAD ID *****")
+    idThread = threading.get_ident()
+    print(idThread)
     # Read config file passed as argument
     config = read_config_file(args)
     
@@ -305,7 +302,7 @@ def main(args):
     run_main_code(client)
 
     # Create graph
-    create_graphs_csv(id_pub)
+    create_graphs_csv(idThread)
 
     # Send metrics to subscriber
     send_metrics(client)
