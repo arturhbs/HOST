@@ -13,269 +13,158 @@ from pathlib import Path
 import math  
 import threading
 
+# Send all metrics to subscribe
+def send_metrics(client, dfAllMetricsAvg, idThread):
 
-cpuTimeArray = []
-cpuTimePIDArray = []
-memVirtualArray = []
-memInfoArray = []
-diskUsageArray = []
-averageMetricsArrayGraph = []
-totalMetricsArrayGraph = []
-axXQtyLoop = []
-axXQtyTopics = []
+    # Run thread in background to look if the publish was effective
+    client.loop_start()
+    # Loop for all the five loop metrics
+    for index, row in dfAllMetricsAvg.iterrows():
+        waitForPublisher = client.publish('cpuTimeAvg', idThread +','+str(row['QtyTopic'])+  ','+str(row['QtyLoop'])+  ','+ str(row['CpuTime']) + ',' +str(row['CpuTimePID'])+  ',' +str(row['DiskUsage'])+  ','+str(row['MemInfo'])+  ','+str(row['MemVirtual']), qos=1)
+        waitForPublisher.wait_for_publish()
+        print(row['QtyLoop'])
+    # Send cpuTime metric
 
-
-# Initialize constants
-def reset_constants_arrays():
-    cpuTimeArray.clear()
-    cpuTimePIDArray.clear()
-    memVirtualArray.clear()
-    memInfoArray.clear()
-    diskUsageArray.clear()
-
-# Take the average from values caught in metrics
-def get_average_metrics_values():
-    dictAverageMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
-    dictAverageMetrics['cpuTimeArray'] = statistics.mean(cpuTimeArray)
-    dictAverageMetrics['cpuTimePIDArray'] = statistics.mean(cpuTimePIDArray)
-    dictAverageMetrics['memVirtualArray'] = statistics.mean(memVirtualArray)
-    dictAverageMetrics['memInfoArray'] = statistics.mean(memInfoArray)
-    dictAverageMetrics['diskUsageArray'] = statistics.mean(diskUsageArray)
-    
-    return dictAverageMetrics
-
-# Get all values caught in metrics
-def get_all_metrics_values():
-    # With [:] it is passing the value, not the pointer
-    dictTotalMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
-    dictTotalMetrics['cpuTimeArray'] = cpuTimeArray[:] 
-    dictTotalMetrics['cpuTimePIDArray'] = cpuTimePIDArray[:]
-    dictTotalMetrics['memVirtualArray'] = memVirtualArray[:]
-    dictTotalMetrics['memInfoArray'] = memInfoArray[:]
-    dictTotalMetrics['diskUsageArray'] = diskUsageArray[:]
-
-    return dictTotalMetrics
 
 # Get all metrics
-def get_metrics():
+def get_metrics(qtyLoop,qtyTopics,dfAllMetrics):
     p = psutil.Process()
     # CPU time of all computer;
     # cpu_time = Return system CPU times as a named tuple. Every attribute represents the seconds the CPU has spent in the given mode;
     # [0]=user; [1]=system; [2]=idle;
     cpuTime = psutil.cpu_times()
-    cpuTimeArray.append(cpuTime[0]+cpuTime[1]+cpuTime[2])
+    cpuTimeValue = cpuTime[0]+cpuTime[1]+cpuTime[2]
 
     # CPU time of the specific process;
     #user: time spent in user mode; system: time spent in kernel mode.
     # [0]=user; [1]=system;
     cpuTimePID = p.cpu_times()
-    cpuTimePIDArray.append(cpuTimePID[0]+cpuTimePID[1])
+    cpuTimePIDAValue = cpuTimePID[0]+cpuTimePID[1]
+ 
+    # diskUsage = append the used disk value; 
+    # [0] = total ; [1]=used; [2]=free,[4]=percent
+    diskUsage = psutil.disk_usage('../')
+    diskUsageValue = diskUsage[1]
     
-    #memVirtual = append the virtual memory (not just the process like in memInfo, but all computer); 
-    # [0]=total;[1]=available;[2]=percent;[3]=used;[4]=used;[5]=free;....
-    memVirtual = psutil.virtual_memory()
-    memVirtualArray.append(memVirtual[3])
-
     # rss: aka “Resident Set Size”, this is the non-swapped physical memory a process has used. On UNIX it matches “top“‘s RES column). On Windows this is an alias for wset field and it matches “Mem Usage” column of taskmgr.exe.
     # vms: aka “Virtual Memory Size”, this is the total amount of virtual memory used by the process. On UNIX it matches “top“‘s VIRT column. On Windows this is an alias for pagefile field and it matches “Mem Usage” “VM Size” column of taskmgr.exe.
     # [0]=rss; [1]=vms
     memInfo = p.memory_info()
-    memInfoArray.append(memInfo[0]+ memInfo[1])
+    memInfoValue = memInfo[0]+ memInfo[1]
     
-    # diskUsage = append the used disk value; 
-    # [0] = total ; [1]=used; [2]=free,[4]=percent
-    diskUsage = psutil.disk_usage('../')
-    diskUsageArray.append(diskUsage[1])
+    #memVirtual = append the virtual memory (not just the process like in memInfo, but all computer); 
+    # [0]=total;[1]=available;[2]=percent;[3]=used;[4]=used;[5]=free;....
+    memVirtual = psutil.virtual_memory()
+    memVirtualValue = memVirtual[3]
 
-# Send all metrics to subscribe
-def send_metrics(client, idThread):
-  
-    # Get the average of the averages metric got (we have got metric of qtyLoop with qtyTopic, so it is needed to get the avg of that)
-   
-    dictAvgMetrics = {'cpuTimeArray':None, 'cpuTimePIDArray':None,  'memVirtualArray':None,  'memInfoArray':None, 'diskUsageArray':None}
-    AvgMetrics = []
-    avgCpu = []
-    avgCpuPID = []
-    memVirtual = []
-    memInfo = []
-    diskUsage = []
-    sizeTopicArray=math.sqrt(len(axXQtyTopics))
-    j=0
-    for i in averageMetricsArrayGraph:
-        j+=1
-        avgCpu.append(i['cpuTimeArray'])
-        avgCpuPID.append(i['cpuTimePIDArray'])
-        memVirtual.append(i['memVirtualArray'])
-        memInfo.append(i['memInfoArray'])
-        diskUsage.append(i['diskUsageArray'])
-        # When finish inserting the values in metrics array, it is done the mean of each metric
-        if(j==sizeTopicArray):
-            j=0
-            dictAvgMetrics['cpuTimeArray'] = statistics.mean(avgCpu)
-            dictAvgMetrics['cpuTimePIDArray'] = statistics.mean(avgCpuPID)
-            dictAvgMetrics['memVirtualArray'] = statistics.mean(memVirtual)
-            dictAvgMetrics['memInfoArray'] = statistics.mean(memInfo)
-            dictAvgMetrics['diskUsageArray'] = statistics.mean(diskUsage)
-            # print("\ndictAvg\n",dictAvgMetrics)
-            AvgMetrics.append(dictAvgMetrics)
-            
-        
-
-    # print(AvgMetrics)    
-
-
-    # Run thread in background to look if the publish was effective
-    client.loop_start()
-    # Loop for all the five loop metrics
-    for i in range(int(sizeTopicArray)):
-        try:
-            # Send cpuTime metric
-            waitForPublisher = client.publish('cpuTimeAvg', str(AvgMetrics[i]['cpuTimeArray']) + ',' + str(i) + ',' + idThread, qos=1)
-            waitForPublisher.wait_for_publish()
-           
-            # Send cpuTimePID metric
-            waitForPublisher = client.publish('cpuTimePIDAvg', str(AvgMetrics[i]['cpuTimePIDArray']) + ',' + str(i) + ',' + idThread, qos=1) 
-            waitForPublisher.wait_for_publish()
-
-            # Send memVirtual metric
-            waitForPublisher = client.publish('memVirtualAvg', str(AvgMetrics[i]['memVirtualArray']) + ',' + str(i) + ',' + idThread, qos=1)
-            waitForPublisher.wait_for_publish()
-
-            # Send memInfo metric
-            waitForPublisher = client.publish('memInfoAvg', str(AvgMetrics[i]['memInfoArray']) + ',' + str(i) + ',' + idThread, qos=1)
-            waitForPublisher.wait_for_publish()
-
-            # Send diskUsage metric
-            waitForPublisher = client.publish('diskUsageAvg', str(AvgMetrics[i]['diskUsageArray']) + ',' + str(i) + ',' + idThread, qos=1)
-            waitForPublisher.wait_for_publish()
-
-        except ValueError:
-            print("Error in send message!! Value i that got error was: ", i)
-
-# Sent value of quantity publications for the graph
-def pipeline_metrics(qtyLoop,client,qtyTopics):
-    count_message_n_topics(qtyLoop, client,qtyTopics)
-    # get values for axes X in graphs
-    axXQtyLoop.append(qtyLoop)
-    axXQtyTopics.append(qtyTopics)
-    averageMetrics = get_average_metrics_values()
-    averageMetricsArrayGraph.append(averageMetrics)
-    totalMetrics = get_all_metrics_values()
-    totalMetricsArrayGraph.append(totalMetrics)
-    reset_constants_arrays()
+    countRows =len(dfAllMetrics.index)
+    dfAllMetrics.loc[countRows] = [qtyTopics,qtyLoop,cpuTimeValue,cpuTimePIDAValue,diskUsageValue,memInfoValue,memVirtualValue]
 
 # Run the main code with metrics chosen
-def run_main_code(client):
+def run_main_code(client,dfAllMetrics):
     # Call pipeline fuction with fibonacci's number 
     # Parameters for pipeline_metrics: qty for loop; client mqtt, qty of topics to send
-    fibonacciQtyLoop = [1,2,3,4,5]
     fibonacciQtyTopics = [1,2,3,5,8]
+    fibonacciQtyLoop = [1,2,3,4,5]
     
     for j in fibonacciQtyTopics:
         for i in fibonacciQtyLoop:
-            pipeline_metrics(i,client,j)
+            count_message_n_topics(client,j,i,dfAllMetrics)
 
 # main code
-def count_message_n_topics(qtyLoop, client, qtyTopics):
+def count_message_n_topics(client, qtyTopics, qtyLoop,dfAllMetrics ):
     for i in range(qtyLoop) :
-        get_metrics()
+        get_metrics(qtyLoop,qtyTopics,dfAllMetrics)
         time.sleep(1)
         message=str(i)
+
+        # simulate sening diferent topics
         for j in range(qtyTopics):
             randomTopic = str(uuid.uuid4())
             wait = client.publish(randomTopic,message)
             wait.wait_for_publish()
        
-        get_metrics()
+        get_metrics(qtyLoop,qtyTopics,dfAllMetrics)
 
 # Line chart with average metric values
-def line_chart(Y,XLoop,XTopics, nameImage, idThread):
+def line_chart(df, nameImage, idThread):
 
     plt.clf()
-    # Creating dataframe pandas with the data to plot
-
-    df = pd.DataFrame(list(zip(XLoop,XTopics, Y)), columns =['Loops','Topics','Value']) 
-    # df["Topics"] = ["$%s$" % x for x in df["Topics"]]
-    # Create csv file
+    
+    # Create csv file with the dataframe name
     df.to_csv(r'../data/csv/publisher/'+idThread+'/linechart_'+ nameImage +'_' +  idThread +'.csv',index=False)
 
     # set color to each lineplot
     sns.set(style = "whitegrid")
-    snsLinePlot = sns.lineplot(x="Loops", y="Value",markers=["o", "o","o","o","o"], 
-                                 hue='Topics', style="Topics",legend="full",palette=["C0", "C1", "C2", "C3","C4"],data=df)
+    snsLinePlot = sns.lineplot(x="QtyLoop", y=nameImage,markers=["o", "o","o","o","o"], 
+                                 hue='QtyTopic', style="QtyTopic",legend="full",palette=["C0", "C1", "C2", "C3","C4"],data=df)
    
     snsLinePlot.set_xlabel("QtyLoop")
-    snsLinePlot.set_ylabel(nameImage)
+    snsLinePlot.set_ylabel(nameImage + 'Average')
     snsLinePlot.set_title('Average Time Process Per Publisher')
-    snsLinePlot.legend(loc='center right', bbox_to_anchor=(1.25, 0.5), ncol=1, title='Topics')
+    snsLinePlot.legend(loc='center right', bbox_to_anchor=(1, 0.5), ncol=1, title='Topics')
     # sns.color_palette("Paired")
 
-    snsLinePlot.figure.savefig('../data/graphics/publisher/'+idThread +'/lineChart_'+nameImage+'.png',bbox_inches='tight')
+    snsLinePlot.figure.savefig('../data/graphics/publisher/'+idThread +'/lineChart_'+nameImage+'Average.png',bbox_inches='tight')
     plt.clf()
 
 # Boxplot chart with average metric values
-def boxPlot_chart(Y,XLoop, XTopics,nameImage, idThread):
+def boxPlot_chart(df,nameImage, idThread):
     plt.clf()
-    df = pd.DataFrame(list(zip(XLoop,XTopics, Y)), columns =['QtyLoop','QtyTopic','Metric'])    
-    df = df.explode('Metric')
-    # Create csv file
+   
+    # Create csv file with the dataframe name 
     df.to_csv(r'../data/csv/publisher/'+idThread+'/boxplot_'+ nameImage +'_' + idThread +'.csv',index=False)
 
     sns.set(style = "whitegrid")
-    snsBoxPlot = sns.catplot(x="QtyLoop", y="Metric",col="QtyTopic",
+    snsBoxPlot = sns.catplot(x="QtyLoop", y=nameImage,col="QtyTopic",
                                 data=df,  kind="box", height=4, aspect=.7)
-    snsBoxPlot.set(ylabel = nameImage)
-    snsBoxPlot.savefig('../data/graphics/publisher/'+idThread +'/boxPlotChart_'+nameImage+'.png')
+    snsBoxPlot.set(ylabel = nameImage+'TotalMetrics')
+    snsBoxPlot.savefig('../data/graphics/publisher/'+idThread +'/boxPlotChart_'+nameImage+'TotalMetrics.png')
     plt.clf()
 
 # Create all graphs necessary, calling functions of charts and inside that functions are the csv creation due to the complete dataframe of each graph
-def create_graphs_csv(idThread):
-    cpuTimeAverage = []
-    cpuTimePIDAverage = []
-    memVirtualAverage = []
-    memInfoAverage = []
-    diskUsageAverage = []
-    cpuTimeTotalMetrics = []
-    cpuTimePIDTotalMetrics = []
-    memVirtualTotalMetrics = []
-    memInfoTotalMetrics = []
-    diskUsageTotalMetrics = []
-    # print("\ncputimearray\n", averageMetricsArrayGraph)
-    for i in averageMetricsArrayGraph:
-        cpuTimeAverage.append(i['cpuTimeArray'])
-        cpuTimePIDAverage.append(i['cpuTimePIDArray'])
-        memVirtualAverage.append(i['memVirtualArray'])
-        memInfoAverage.append(i['memInfoArray'])
-        diskUsageAverage.append(i['diskUsageArray'])
-    
-    for i in totalMetricsArrayGraph:
-        cpuTimeTotalMetrics.append(i['cpuTimeArray'])
-        cpuTimePIDTotalMetrics.append(i['cpuTimePIDArray'])
-        memVirtualTotalMetrics.append(i['memVirtualArray'])
-        memInfoTotalMetrics.append(i['memInfoArray'])
-        diskUsageTotalMetrics.append(i['diskUsageArray'])
-    
-    # print("\ncputimearray\n", cpuTimeAverage)
-    # print("\ncputimearray\n", len(cpuTimeAverage))
+def create_graphs_csv(idThread,dfAllMetrics,dfAllMetricsAvg):
+  
     # Create directory with the id of the publisher
     Path("../data/csv/publisher/"+idThread).mkdir(parents=True, exist_ok=True)
     Path("../data/graphics/publisher/"+idThread).mkdir(parents=True, exist_ok=True)
-    
-    # Call function to create a line chart
-    line_chart(cpuTimeAverage,axXQtyLoop, axXQtyTopics,'CpuTimeAverage', idThread)
-    line_chart(cpuTimePIDAverage,axXQtyLoop,axXQtyTopics, 'CpuTimePIDAverage',idThread)
-    line_chart(memVirtualAverage,axXQtyLoop, axXQtyTopics,'MemVirtualAverage', idThread)
-    line_chart(memInfoAverage,axXQtyLoop, axXQtyTopics,'MemInfoAverage', idThread)
-    line_chart(diskUsageAverage,axXQtyLoop, axXQtyTopics,'DiskUsageAverage', idThread)
-    
-    # Call function to create a box plot chart
 
+    print(dfAllMetrics.head())
+    print(dfAllMetricsAvg.head())
+    # Crete csv with all metrics and average of all metrics making a grupby of Topics
+    dfAllMetrics.to_csv(r'../data/csv/publisher/'+idThread+'/AllMetrics.csv',index=False)
+    dfAllMetricsAvg.to_csv(r'../data/csv/publisher/'+idThread+'/AllMetricsAvg.csv',index=False)
 
-    boxPlot_chart(cpuTimeTotalMetrics,axXQtyLoop , axXQtyTopics, 'CpuTimeTotalMetrics', idThread)
-    boxPlot_chart(cpuTimePIDTotalMetrics,axXQtyLoop,axXQtyTopics, 'CpuTimePIDTotalMetrics', idThread)
-    boxPlot_chart(memVirtualTotalMetrics,axXQtyLoop, axXQtyTopics, 'MemVirtualTotalMetrics', idThread)
-    boxPlot_chart(memInfoTotalMetrics,axXQtyLoop,axXQtyTopics, 'MemInfoTotalMetrics', idThread)
-    boxPlot_chart(diskUsageTotalMetrics,axXQtyLoop,axXQtyTopics, 'DiskUsageTotalMetrics', idThread)
+    dfCpuTime = dfAllMetrics[['QtyTopic','QtyLoop','CpuTime']]
+    dfCpuTimePID = dfAllMetrics[['QtyTopic','QtyLoop','CpuTimePID']]
+    dfDiskUsage = dfAllMetrics[['QtyTopic','QtyLoop','DiskUsage']]
+    dfMemInfo = dfAllMetrics[['QtyTopic','QtyLoop','MemInfo']]
+    dfMemVirtual = dfAllMetrics[['QtyTopic','QtyLoop','MemVirtual']]
+
+    # Boxplot chart creation with all values ​​obtained
+    boxPlot_chart(dfCpuTime,'CpuTime', idThread)
+    boxPlot_chart(dfCpuTimePID,'CpuTimePID', idThread)
+    boxPlot_chart(dfDiskUsage,'DiskUsage', idThread)
+    boxPlot_chart(dfMemInfo,'MemInfo', idThread)
+    boxPlot_chart(dfMemVirtual,'MemVirtual', idThread)
+
+    # Crete csv with the average of all metrics
+
+    dfCpuTimeAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','CpuTime']]
+    dfCpuTimePIDAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','CpuTimePID']]
+    dfDiskUsageAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','DiskUsage']]
+    dfMemInfoAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','MemInfo']]
+    dfMemVirtualAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','MemVirtual']]
+ 
+
+    # # Line chart creation with the average of all values ​​obtained
+    line_chart(dfCpuTimeAvg,'CpuTime', idThread)
+    line_chart(dfCpuTimePIDAvg,'CpuTimePID', idThread)
+    line_chart(dfDiskUsageAvg,'DiskUsage', idThread)
+    line_chart(dfMemInfoAvg,'MemInfo', idThread)
+    line_chart(dfMemVirtualAvg,'MemVirtual', idThread)
+    
+    # # Call function to create a box plot chart
 
 # Read config file that user can modify 
 def read_config_file(args):
@@ -295,22 +184,25 @@ def main(args):
     # Connection with client paho.mqtt api
     client = mqtt.Client()
     client.connect(config['hostIP'], config['port'], config['keepAlive'])
+
+    # Creating a dataframe to get all metrics    
+    dfAllMetrics = pd.DataFrame(columns=['QtyTopic','QtyLoop','CpuTime', 'CpuTimePID', 'DiskUsage', 'MemInfo','MemVirtual'])
+
+    # Metrics about quantity of publications
+    run_main_code(client,dfAllMetrics)
+
+    # Creating Avg by quantity of topics
+    dfAllMetricsAvg = dfAllMetrics.groupby(['QtyTopic','QtyLoop'],as_index=False).mean()
     
-    # Declaring all metrics
-    get_metrics()
-
-    # Metrics about quantity of publicationsX
-    run_main_code(client)
-
-    # Create graph
-    create_graphs_csv(idThread)
+    # Create graphs and csv with metrics
+    create_graphs_csv(idThread,dfAllMetrics,dfAllMetricsAvg)
 
     # Send metrics to subscriber
-    send_metrics(client, idThread)
+    send_metrics(client, dfAllMetricsAvg, idThread)
     
-    print("####### Vai desconectar ######")
     # End client mqtt
     client.disconnect()
+    print("\n####### Finalizou ######\nProcess id: ", idThread)
 
 if __name__ == "__main__":
     # See total duration of the process

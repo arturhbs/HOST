@@ -10,7 +10,7 @@ import seaborn as sns
 
 
 # Dataframe to get all data (function = read_message)
-dfMetricsProcesses = pd.DataFrame(columns=['PROCESS', 'QTYLOOP', 'METRIC', 'VALUE'])
+dfMetricsProcesses = pd.DataFrame(columns=['Process', 'QtyLoop', 'QtyTopic', 'CpuTime', 'CpuTimePID','DiskUsage','MemInfo','MemVirtual'])
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
@@ -24,22 +24,31 @@ def on_message(client, userdata, msg):
     # print(msg.topic+" "+str(msg.payload))
     message = msg.payload.decode('UTF-8')
     messageSplit = message.split(sep=',')
-    messageValue = float(messageSplit[0])
-    qtyLoop = int(messageSplit[1])
-    messageId = int(messageSplit[2])
-    read_message(msg.topic,messageValue,qtyLoop,messageId)
+    processId = int(messageSplit[0])
+    qtyTopic = float(messageSplit[1])
+    qtyLoop = float(messageSplit[2])
+    cpuTime = float(messageSplit[3])
+    cpuTimePID = float(messageSplit[4])
+    diskUsage = float(messageSplit[5])
+    memInfo = float(messageSplit[6])
+    memVirtual = float(messageSplit[7])
+    read_message(processId,qtyTopic,qtyLoop,cpuTime,cpuTimePID,diskUsage,memInfo,memVirtual)
 
 # Identify message recieved
-def read_message(msgMetric,msgValue,qtyLoop, msgId):
+def read_message(processId,qtyTopic,qtyLoop,cpuTime,cpuTimePID,diskUsage,memInfo,memVirtual):
     # print('topic = ', topic)
     # print('msg index', qtyLoop)
     # print('msg id', msgId)
 
+
+    print(processId,qtyTopic,qtyLoop,cpuTime,cpuTimePID,diskUsage,memInfo,memVirtual)
     # Get last dataframe's row position
     countRows =len(dfMetricsProcesses.index)
-
-    dfMetricsProcesses.loc[countRows] = [msgId,qtyLoop,msgMetric,msgValue]
-
+    print('\ncountRowa = ',countRows)
+    print('\nlen columns = ',len(dfMetricsProcesses.columns))
+    print('\ncolumns = ',dfMetricsProcesses.columns)
+    dfMetricsProcesses.loc[countRows] = [processId,qtyTopic,qtyLoop,cpuTime,cpuTimePID,diskUsage,memInfo,memVirtual]
+    print(dfMetricsProcesses)
     # 125 get all metrics from 5 publisher processes
     if len(dfMetricsProcesses.index) == 125:
         create_graph(dfMetricsProcesses)
