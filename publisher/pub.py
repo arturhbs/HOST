@@ -22,9 +22,8 @@ def send_metrics(client, dfAllMetricsAvg, idThread):
     for index, row in dfAllMetricsAvg.iterrows():
         waitForPublisher = client.publish('cpuTimeAvg', idThread +','+str(row['QtyTopic'])+  ','+str(row['QtyLoop'])+  ','+ str(row['CpuTime']) + ',' +str(row['CpuTimePID'])+  ',' +str(row['DiskUsage'])+  ','+str(row['MemInfo'])+  ','+str(row['MemVirtual']), qos=1)
         waitForPublisher.wait_for_publish()
-        print(row['QtyLoop'])
+        
     # Send cpuTime metric
-
 
 # Get all metrics
 def get_metrics(qtyLoop,qtyTopics,dfAllMetrics):
@@ -65,7 +64,7 @@ def run_main_code(client,dfAllMetrics):
     # Call pipeline fuction with fibonacci's number 
     # Parameters for pipeline_metrics: qty for loop; client mqtt, qty of topics to send
     fibonacciQtyTopics = [1,2,3,5,8]
-    fibonacciQtyLoop = [1,2,3,4,5]
+    fibonacciQtyLoop = [8,13,21,34,55]
     
     for j in fibonacciQtyTopics:
         for i in fibonacciQtyLoop:
@@ -129,8 +128,6 @@ def create_graphs_csv(idThread,dfAllMetrics,dfAllMetricsAvg):
     Path("../data/csv/publisher/"+idThread).mkdir(parents=True, exist_ok=True)
     Path("../data/graphics/publisher/"+idThread).mkdir(parents=True, exist_ok=True)
 
-    print(dfAllMetrics.head())
-    print(dfAllMetricsAvg.head())
     # Crete csv with all metrics and average of all metrics making a grupby of Topics
     dfAllMetrics.to_csv(r'../data/csv/publisher/'+idThread+'/AllMetrics.csv',index=False)
     dfAllMetricsAvg.to_csv(r'../data/csv/publisher/'+idThread+'/AllMetricsAvg.csv',index=False)
