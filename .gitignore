@@ -1,1 +1,6 @@
 .Dockerfile.swp
+.vscode
+data/csv/publisher/*
+data/csv/subscriber/*
+data/graphics/publisher/*
+data/graphics/subscriber/*
