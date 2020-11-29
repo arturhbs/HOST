@@ -20,7 +20,7 @@ def send_metrics(client, dfAllMetricsAvg, idThread):
     client.loop_start()
     # Loop for all the five loop metrics
     for index, row in dfAllMetricsAvg.iterrows():
-        waitForPublisher = client.publish('cpuTimeAvg', idThread +','+str(row['QtyTopic'])+  ','+str(row['QtyLoop'])+  ','+ str(row['CpuTime']) + ',' +str(row['CpuTimePID'])+  ',' +str(row['DiskUsage'])+  ','+str(row['MemInfo'])+  ','+str(row['MemVirtual']), qos=1)
+        waitForPublisher = client.publish('cpuTimeAvg', idThread +','+str(row['QtyTopic'])+  ','+str(row['CountSteps']) + ',' +str(row['CpuTimePID'])+  ',' +str(row['DiskUsage'])+  ','+str(row['MemInfo']), qos=1)
         waitForPublisher.wait_for_publish()
         
     # Send cpuTime metric
@@ -31,8 +31,8 @@ def get_metrics(qtyLoop,qtyTopics,dfAllMetrics):
     # CPU time of all computer;
     # cpu_time = Return system CPU times as a named tuple. Every attribute represents the seconds the CPU has spent in the given mode;
     # [0]=user; [1]=system; [2]=idle;
-    cpuTime = psutil.cpu_times()
-    cpuTimeValue = cpuTime[0]+cpuTime[1]+cpuTime[2]
+    # cpuTime = psutil.cpu_times()
+    # cpuTimeValue = cpuTime[0]+cpuTime[1]+cpuTime[2]
 
     # CPU time of the specific process;
     #user: time spent in user mode; system: time spent in kernel mode.
@@ -41,7 +41,7 @@ def get_metrics(qtyLoop,qtyTopics,dfAllMetrics):
     cpuTimePIDAValue = cpuTimePID[0]+cpuTimePID[1]
  
     # diskUsage = append the used disk value; 
-    # [0] = total ; [1]=used; [2]=free,[4]=percent
+    # [0] = total ; [1]=used; [2]=free,[3]=percent
     diskUsage = psutil.disk_usage('../')
     diskUsageValue = diskUsage[1]
     
@@ -53,18 +53,18 @@ def get_metrics(qtyLoop,qtyTopics,dfAllMetrics):
     
     #memVirtual = append the virtual memory (not just the process like in memInfo, but all computer); 
     # [0]=total;[1]=available;[2]=percent;[3]=used;[4]=used;[5]=free;....
-    memVirtual = psutil.virtual_memory()
-    memVirtualValue = memVirtual[3]
+    # memVirtual = psutil.virtual_memory()
+    # memVirtualValue = memVirtual[3]
 
     countRows =len(dfAllMetrics.index)
-    dfAllMetrics.loc[countRows] = [qtyTopics,qtyLoop,cpuTimeValue,cpuTimePIDAValue,diskUsageValue,memInfoValue,memVirtualValue]
+    dfAllMetrics.loc[countRows] = [qtyTopics,qtyLoop,cpuTimePIDAValue,diskUsageValue,memInfoValue]
 
 # Run the main code with metrics chosen
 def run_main_code(client,dfAllMetrics):
     # Call pipeline fuction with fibonacci's number 
     # Parameters for pipeline_metrics: qty for loop; client mqtt, qty of topics to send
-    fibonacciQtyTopics = [1,2,3,5,8]
-    fibonacciQtyLoop = [8,13,21,34,55]
+    fibonacciQtyTopics = [1,2,3,5,8,13,21,34,55]
+    fibonacciQtyLoop = [2,4,8,16,32]
     
     for j in fibonacciQtyTopics:
         for i in fibonacciQtyLoop:
@@ -95,10 +95,10 @@ def line_chart(df, nameImage, idThread):
 
     # set color to each lineplot
     sns.set(style = "whitegrid")
-    snsLinePlot = sns.lineplot(x="QtyLoop", y=nameImage,markers=["o", "o","o","o","o"], 
-                                 hue='QtyTopic', style="QtyTopic",legend="full",palette=["C0", "C1", "C2", "C3","C4"],data=df)
+    snsLinePlot = sns.lineplot(x="CountSteps", y=nameImage, 
+                                 hue='QtyTopic', style="QtyTopic",legend="full",data=df)
    
-    snsLinePlot.set_xlabel("QtyLoop")
+    snsLinePlot.set_xlabel("CountSteps")
     snsLinePlot.set_ylabel(nameImage + 'Average')
     snsLinePlot.set_title('Average Time Process Per Publisher')
     snsLinePlot.legend(loc='center right', bbox_to_anchor=(1, 0.5), ncol=1, title='Topics')
@@ -115,7 +115,7 @@ def boxPlot_chart(df,nameImage, idThread):
     df.to_csv(r'../data/csv/publisher/'+idThread+'/boxplot_'+ nameImage +'_' + idThread +'.csv',index=False)
 
     sns.set(style = "whitegrid")
-    snsBoxPlot = sns.catplot(x="QtyLoop", y=nameImage,col="QtyTopic",
+    snsBoxPlot = sns.catplot(x="CountSteps", y=nameImage,col="QtyTopic",
                                 data=df,  kind="box", height=4, aspect=.7)
     snsBoxPlot.set(ylabel = nameImage+'TotalMetrics')
     snsBoxPlot.savefig('../data/graphics/publisher/'+idThread +'/boxPlotChart_'+nameImage+'TotalMetrics.png')
@@ -132,34 +132,34 @@ def create_graphs_csv(idThread,dfAllMetrics,dfAllMetricsAvg):
     dfAllMetrics.to_csv(r'../data/csv/publisher/'+idThread+'/AllMetrics.csv',index=False)
     dfAllMetricsAvg.to_csv(r'../data/csv/publisher/'+idThread+'/AllMetricsAvg.csv',index=False)
 
-    dfCpuTime = dfAllMetrics[['QtyTopic','QtyLoop','CpuTime']]
-    dfCpuTimePID = dfAllMetrics[['QtyTopic','QtyLoop','CpuTimePID']]
-    dfDiskUsage = dfAllMetrics[['QtyTopic','QtyLoop','DiskUsage']]
-    dfMemInfo = dfAllMetrics[['QtyTopic','QtyLoop','MemInfo']]
-    dfMemVirtual = dfAllMetrics[['QtyTopic','QtyLoop','MemVirtual']]
+    # dfCpuTime = dfAllMetrics[['QtyTopic','CountSteps','CpuTime']]
+    dfCpuTimePID = dfAllMetrics[['QtyTopic','CountSteps','CpuTimePID']]
+    dfDiskUsage = dfAllMetrics[['QtyTopic','CountSteps','DiskUsage']]
+    dfMemInfo = dfAllMetrics[['QtyTopic','CountSteps','MemInfo']]
+    # dfMemVirtual = dfAllMetrics[['QtyTopic','CountSteps','MemVirtual']]
 
     # Boxplot chart creation with all values ​​obtained
-    boxPlot_chart(dfCpuTime,'CpuTime', idThread)
+    # boxPlot_chart(dfCpuTime,'CpuTime', idThread)
     boxPlot_chart(dfCpuTimePID,'CpuTimePID', idThread)
     boxPlot_chart(dfDiskUsage,'DiskUsage', idThread)
     boxPlot_chart(dfMemInfo,'MemInfo', idThread)
-    boxPlot_chart(dfMemVirtual,'MemVirtual', idThread)
+    # boxPlot_chart(dfMemVirtual,'MemVirtual', idThread)
 
     # Crete csv with the average of all metrics
 
-    dfCpuTimeAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','CpuTime']]
-    dfCpuTimePIDAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','CpuTimePID']]
-    dfDiskUsageAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','DiskUsage']]
-    dfMemInfoAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','MemInfo']]
-    dfMemVirtualAvg = dfAllMetricsAvg[['QtyLoop','QtyTopic','MemVirtual']]
+    # dfCpuTimeAvg = dfAllMetricsAvg[['CountSteps','QtyTopic','CpuTime']]
+    dfCpuTimePIDAvg = dfAllMetricsAvg[['CountSteps','QtyTopic','CpuTimePID']]
+    dfDiskUsageAvg = dfAllMetricsAvg[['CountSteps','QtyTopic','DiskUsage']]
+    dfMemInfoAvg = dfAllMetricsAvg[['CountSteps','QtyTopic','MemInfo']]
+    # dfMemVirtualAvg = dfAllMetricsAvg[['CountSteps','QtyTopic','MemVirtual']]
  
 
     # # Line chart creation with the average of all values ​​obtained
-    line_chart(dfCpuTimeAvg,'CpuTime', idThread)
+    # line_chart(dfCpuTimeAvg,'CpuTime', idThread)
     line_chart(dfCpuTimePIDAvg,'CpuTimePID', idThread)
     line_chart(dfDiskUsageAvg,'DiskUsage', idThread)
     line_chart(dfMemInfoAvg,'MemInfo', idThread)
-    line_chart(dfMemVirtualAvg,'MemVirtual', idThread)
+    # line_chart(dfMemVirtualAvg,'MemVirtual', idThread)
     
     # # Call function to create a box plot chart
 
@@ -183,13 +183,13 @@ def main(args):
     client.connect(config['hostIP'], config['port'], config['keepAlive'])
 
     # Creating a dataframe to get all metrics    
-    dfAllMetrics = pd.DataFrame(columns=['QtyTopic','QtyLoop','CpuTime', 'CpuTimePID', 'DiskUsage', 'MemInfo','MemVirtual'])
+    dfAllMetrics = pd.DataFrame(columns=['QtyTopic','CountSteps', 'CpuTimePID', 'DiskUsage', 'MemInfo'])
 
     # Metrics about quantity of publications
     run_main_code(client,dfAllMetrics)
 
     # Creating Avg by quantity of topics
-    dfAllMetricsAvg = dfAllMetrics.groupby(['QtyTopic','QtyLoop'],as_index=False).mean()
+    dfAllMetricsAvg = dfAllMetrics.groupby(['QtyTopic','CountSteps'],as_index=False).mean()
     
     # Create graphs and csv with metrics
     create_graphs_csv(idThread,dfAllMetrics,dfAllMetricsAvg)
