@@ -20,7 +20,7 @@ def send_metrics(client, dfAllMetricsAvg, idThread):
     client.loop_start()
     # Loop for all the five loop metrics
     for index, row in dfAllMetricsAvg.iterrows():
-        waitForPublisher = client.publish('cpuTimeAvg', idThread +','+str(row['QtyTopic'])+  ','+str(row['CountSteps']) + ',' +str(row['CpuTimePID'])+  ',' +str(row['DiskUsage'])+  ','+str(row['MemInfo']), qos=1)
+        waitForPublisher = client.publish('cpuTimeAvg', idThread +','+str(row['CountSteps'])+  ','+str(row['QtyTopic']) + ',' +str(row['CpuTimePID'])+  ',' +str(row['DiskUsage'])+  ','+str(row['MemInfo']), qos=1)
         waitForPublisher.wait_for_publish()
         
     # Send cpuTime metric
@@ -64,10 +64,10 @@ def run_main_code(client,dfAllMetrics):
     # Call pipeline fuction with fibonacci's number 
     # Parameters for pipeline_metrics: qty for loop; client mqtt, qty of topics to send
     fibonacciQtyTopics = [1,2,3,5,8,13,21,34,55]
-    fibonacciQtyLoop = [2,4,8,16,32]
+    fibonacciCountSteps = [2,4,8,16,32]
     
     for j in fibonacciQtyTopics:
-        for i in fibonacciQtyLoop:
+        for i in fibonacciCountSteps:
             count_message_n_topics(client,j,i,dfAllMetrics)
 
 # main code
