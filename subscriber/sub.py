@@ -41,21 +41,21 @@ def read_message(processId,qtyTopic,qtyLoop,cpuTimePID,diskUsage,memInfo):
     
     # Verify how many process are executing at same time
     # countRows plus one because dataframe starts with 0
-    if countRows < 360:
-        dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 8
-    elif countRows < 585:
-        dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 5
-    elif countRows < 720:
-        dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 3
-    elif countRows < 810:
-        dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 2
-    elif countRows < 855:
-        dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 1
+    # if countRows < 360:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 8
+    # elif countRows < 585:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 5
+    # elif countRows < 720:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 3
+    # elif countRows < 810:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 2
+    # elif countRows < 855:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 1
 
 
     # print(dfMetricsProcesses)    
     print(countRows)
-    if len(dfMetricsProcesses.index) == 855 :
+    if len(dfMetricsProcesses.index) == 225 :
         create_graph_csv(dfMetricsProcesses)
     
 
@@ -64,11 +64,11 @@ def read_message(processId,qtyTopic,qtyLoop,cpuTimePID,diskUsage,memInfo):
     #     old_create_graph_csv(dfMetricsProcesses)
 
 # Create line chart   
-def old_line_chart(df, nameImage):
+def line_chart(df, nameImage):
     plt.clf()
     sns.set(style = "whitegrid")
-    snsLinePlot = sns.lineplot(x="CountSteps", y=nameImage,markers=["o", "o","o","o","o"], 
-                                hue='QtyTopic', style="QtyTopic",legend="full",palette=["C0", "C1", "C2", "C3","C4"],data=df)
+    snsLinePlot = sns.lineplot(x="CountSteps", y=nameImage, 
+                                hue='QtyTopic', style="QtyTopic",legend="full",data=df)
 
     snsLinePlot.set_xlabel("CountSteps")
     snsLinePlot.set_ylabel(nameImage)
@@ -78,7 +78,7 @@ def old_line_chart(df, nameImage):
     snsLinePlot.figure.savefig('../data/graphics/subscriber/lineChart_'+nameImage+'.png')
     plt.clf()
 
-def old_transform_data_for_graph(dfMetricsProcesses):
+def transform_data_for_graph(dfMetricsProcesses):
     # Average of all values pivoting qtyloop as  the main metric for each process
     dfMetricsProcessesAvg = dfMetricsProcesses.groupby(['CountSteps','QtyTopic'],as_index=False).mean()
         
@@ -87,31 +87,31 @@ def old_transform_data_for_graph(dfMetricsProcesses):
     dfMetricsProcesses.to_csv(r'../data/csv/subscriber/MetricsProcesses.csv',index=False)
     
     # Splitting dataframe by metric name
-    dfCpuTimeAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','CpuTime']]
+    # dfCpuTimeAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','CpuTime']]
     dfCpuTimePIDAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','CpuTimePID']]
     dfDiskUsageAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','DiskUsage']]
     dfMemInfoAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','MemInfo']]
-    dfMemVirtualAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','MemVirtual']]
+    # dfMemVirtualAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','MemVirtual']]
     
     # Writting dataframe's csv
-    dfCpuTimeAvg.to_csv(r'../data/csv/subscriber/CpuTimeAvg.csv',index=False)
+    # dfCpuTimeAvg.to_csv(r'../data/csv/subscriber/CpuTimeAvg.csv',index=False)
     dfCpuTimePIDAvg.to_csv(r'../data/csv/subscriber/CpuTimePIDAvg.csv',index=False)
     dfDiskUsageAvg.to_csv(r'../data/csv/subscriber/DiskUsageAvg.csv',index=False)
     dfMemInfoAvg.to_csv(r'../data/csv/subscriber/MemInfoAvg.csv',index=False)
-    dfMemVirtualAvg.to_csv(r'../data/csv/subscriber/MemVirtualAvg.csv',index=False)
+    # dfMemVirtualAvg.to_csv(r'../data/csv/subscriber/MemVirtualAvg.csv',index=False)
   
-    return dfMetricsProcessesAvg, dfCpuTimeAvg, dfCpuTimePIDAvg, dfMemVirtualAvg, dfMemInfoAvg, dfDiskUsageAvg
+    return dfMetricsProcessesAvg,  dfCpuTimePIDAvg,  dfMemInfoAvg, dfDiskUsageAvg
     
-def old_create_graph_csv(dfMetricsProcesses):
-    dfMetricsProcessesAvg, dfCpuTimeAvg, dfCpuTimePIDAvg, dfMemVirtualAvg, dfMemInfoAvg, dfDiskUsageAvg = transform_data_for_graph(dfMetricsProcesses)
+def create_graph_csv(dfMetricsProcesses):
+    dfMetricsProcessesAvg,  dfCpuTimePIDAvg,  dfMemInfoAvg, dfDiskUsageAvg = transform_data_for_graph(dfMetricsProcesses)
 
-    line_chart(dfCpuTimeAvg, 'CpuTime')
+    # line_chart(dfCpuTimeAvg, 'CpuTime')
     line_chart( dfCpuTimePIDAvg, 'CpuTimePID')
     line_chart( dfDiskUsageAvg, 'DiskUsage')
     line_chart( dfMemInfoAvg, 'MemInfo')
-    line_chart( dfMemVirtualAvg, 'MemVirtual')
+    # line_chart( dfMemVirtualAvg, 'MemVirtual')
 
-def line_chart(df, nameImage):
+def new_line_chart(df, nameImage):
     plt.clf()
     sns.set(style = "whitegrid")
     snsLinePlot = sns.lineplot(x="CountSteps", y=nameImage,markers=["o", "o","o","o","o"], 
@@ -125,7 +125,7 @@ def line_chart(df, nameImage):
     snsLinePlot.figure.savefig('../data/graphics/subscriber/lineChart_'+nameImage+'.png')
     plt.clf()
 
-def transform_data_for_graph(dfMetricsProcesses):
+def new_transform_data_for_graph(dfMetricsProcesses):
     # Average of all values pivoting qtyloop as  the main metric for each process
     dfMetricsProcessesAvg = dfMetricsProcesses.groupby(['CountSteps','ProcessNumber'],as_index=False).mean()
         
@@ -149,7 +149,7 @@ def transform_data_for_graph(dfMetricsProcesses):
   
     return dfMetricsProcessesAvg,  dfCpuTimePIDAvg, dfMemInfoAvg, dfDiskUsageAvg
     
-def create_graph_csv(dfMetricsProcesses):
+def new_create_graph_csv(dfMetricsProcesses):
     dfMetricsProcessesAvg,  dfCpuTimePIDAvg,  dfMemInfoAvg, dfDiskUsageAvg = transform_data_for_graph(dfMetricsProcesses)
     # line_chart(dfCpuTimeAvg, 'CpuTime')
     line_chart( dfCpuTimePIDAvg, 'CpuTimePID')
