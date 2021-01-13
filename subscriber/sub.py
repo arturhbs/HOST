@@ -9,13 +9,8 @@ import pandas as pd
 import seaborn as sns
 
 
-
-metricAvg = {'cpuTimeAvg_ax0':[],'cpuTimeAvg_ax1':[],'cpuTimeAvg_ax2':[],'cpuTimeAvg_ax3':[],'cpuTimeAvg_ax4':[],
-            'cpuTimePIDAvg_ax0':[] ,'cpuTimePIDAvg_ax1':[],'cpuTimePIDAvg_ax2':[],'cpuTimePIDAvg_ax3':[],'cpuTimePIDAvg_ax4':[],
-            'memVirtualAvg_ax0':[],'memVirtualAvg_ax1':[],'memVirtualAvg_ax2':[],'memVirtualAvg_ax3':[],'memVirtualAvg_ax4':[] ,
-            'memInfoAvg_ax0':[],'memInfoAvg_ax1':[],'memInfoAvg_ax2':[],'memInfoAvg_ax3':[],'memInfoAvg_ax4':[],
-            'diskUsageAvg_ax0':[],'diskUsageAvg_ax1':[],'diskUsageAvg_ax2':[],'diskUsageAvg_ax3':[],'diskUsageAvg_ax4':[] }
-
+# Dataframe to get all data (function = read_message)
+dfMetricsProcesses = pd.DataFrame(columns=['Process', 'CountSteps', 'QtyTopic', 'CpuTimePID','DiskUsage','MemInfo','ProcessNumber'])
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
@@ -29,150 +24,140 @@ def on_message(client, userdata, msg):
     # print(msg.topic+" "+str(msg.payload))
     message = msg.payload.decode('UTF-8')
     messageSplit = message.split(sep=',')
-    messageMetric = float(messageSplit[0])
-    messageIndex = int(messageSplit[1])
-    read_message(msg.topic,messageMetric,messageIndex)
+    processId = int(messageSplit[0])
+    qtyTopic = float(messageSplit[1])
+    qtyLoop = float(messageSplit[2])
+    cpuTimePID = float(messageSplit[3])
+    diskUsage = float(messageSplit[4])
+    memInfo = float(messageSplit[5])
+    read_message(processId,qtyTopic,qtyLoop,cpuTimePID,diskUsage,memInfo)
 
 # Identify message recieved
-def read_message(topic,msgMetric,msgIndex):
-    # print('topic = ', topic)
-    # print('msg index', msgIndex)
-    if topic == 'cpuTimeAvg':
-        # Get metric for 8 loops
-        if msgIndex == 0:
-            metricAvg['cpuTimeAvg_ax0'].append(msgMetric)
-            
-        # Get metric for 13 loops
-        elif msgIndex == 1:   
-            metricAvg['cpuTimeAvg_ax1'].append(msgMetric)
+def read_message(processId,qtyTopic,qtyLoop,cpuTimePID,diskUsage,memInfo):
 
-        # Get metric for 21 loops
-        elif msgIndex == 2:   
-            metricAvg['cpuTimeAvg_ax2'].append(msgMetric)
-            
-        # Get metric for 34 loops
-        elif msgIndex == 3:   
-            metricAvg['cpuTimeAvg_ax3'].append(msgMetric)
-            
-        # Get metric for 55 loops
-        elif msgIndex == 4:   
-            metricAvg['cpuTimeAvg_ax4'].append(msgMetric)
-            
-    elif topic == 'cpuTimePIDAvg':
-        # Get metric for 8 loops
-        if msgIndex == 0:
-            metricAvg['cpuTimePIDAvg_ax0'].append(msgMetric)
-            
-        # Get metric for 13 loops
-        elif msgIndex == 1:   
-            metricAvg['cpuTimePIDAvg_ax1'].append(msgMetric)
+    # Get last dataframe's row position
+    countRows =len(dfMetricsProcesses.index)
+    dfMetricsProcesses.loc[countRows] = [processId,qtyTopic,qtyLoop,cpuTimePID,diskUsage,memInfo,0]
+    
+    # Verify how many process are executing at same time
+    # countRows plus one because dataframe starts with 0
+    # if countRows < 360:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 8
+    # elif countRows < 585:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 5
+    # elif countRows < 720:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 3
+    # elif countRows < 810:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 2
+    # elif countRows < 855:
+    #     dfMetricsProcesses.loc[countRows]['ProcessNumber'] = 1
 
-        # Get metric for 21 loops
-        elif msgIndex == 2:   
-            metricAvg['cpuTimePIDAvg_ax2'].append(msgMetric)
-            
-        # Get metric for 34 loops
-        elif msgIndex == 3:   
-            metricAvg['cpuTimePIDAvg_ax3'].append(msgMetric)
 
-        # Get metric for 55 loops
-        elif msgIndex == 4:   
-            metricAvg['cpuTimePIDAvg_ax4'].append(msgMetric)
-            
-    elif topic == 'memVirtualAvg':
-        if msgIndex == 0:
-            metricAvg['memVirtualAvg_ax0'].append(msgMetric)
-            
-        elif msgIndex == 1:   
-            metricAvg['memVirtualAvg_ax1'].append(msgMetric)
-            
-        elif msgIndex == 2:   
-            metricAvg['memVirtualAvg_ax2'].append(msgMetric)
-            
-        elif msgIndex == 3:   
-            metricAvg['memVirtualAvg_ax3'].append(msgMetric)
-            
-        elif msgIndex == 4:   
-            metricAvg['memVirtualAvg_ax4'].append(msgMetric)
-            
-    elif topic == 'memInfoAvg':
-        if msgIndex == 0:
-            metricAvg['memInfoAvg_ax0'].append(msgMetric)
-            
-        elif msgIndex == 1:   
-            metricAvg['memInfoAvg_ax1'].append(msgMetric)
-            
-        elif msgIndex == 2:   
-            metricAvg['memInfoAvg_ax2'].append(msgMetric)
-            
-        elif msgIndex == 3:   
-            metricAvg['memInfoAvg_ax3'].append(msgMetric)
-            
-        elif msgIndex == 4:   
-            metricAvg['memInfoAvg_ax4'].append(msgMetric)
-            
-    elif topic == 'diskUsageAvg':
-        if msgIndex == 0:
-            metricAvg['diskUsageAvg_ax0'].append(msgMetric)
-            
-        elif msgIndex == 1:   
-            metricAvg['diskUsageAvg_ax1'].append(msgMetric)
-            
-        elif msgIndex == 2:   
-            metricAvg['diskUsageAvg_ax2'].append(msgMetric)
-            
-        elif msgIndex == 3:   
-            metricAvg['diskUsageAvg_ax3'].append(msgMetric)
-            
-        elif msgIndex == 4:   
-            metricAvg['diskUsageAvg_ax4'].append(msgMetric)
-   
-    if(len(metricAvg['diskUsageAvg_ax4']) == 5 ):
-        create_graph()
-   
+    # print(dfMetricsProcesses)    
+    print(countRows)
+    if len(dfMetricsProcesses.index) == 225 :
+        create_graph_csv(dfMetricsProcesses)
+    
 
-def line_chart(X,Y, nameImage):
+    # 125 get all metrics from 5 publisher processes running at same time
+    # if len(dfMetricsProcesses.index) == 125:
+    #     old_create_graph_csv(dfMetricsProcesses)
+
+# Create line chart   
+def line_chart(df, nameImage):
     plt.clf()
-    df = pd.DataFrame(list(zip(X , Y)), columns =['Fibonacci','value']) 
-    df['Metric'] = 'value'
     sns.set(style = "whitegrid")
-    snsLinePlot = sns.lineplot(x="Fibonacci", y="value",
-                   markers=True,   style='Metric' ,data=df).set_title(nameImage)
+    snsLinePlot = sns.lineplot(x="CountSteps", y=nameImage, 
+                                hue='QtyTopic', style="QtyTopic",legend="full",data=df)
 
-    snsLinePlot.figure.savefig('../data/subscriber/lineChart_'+nameImage+'.png')
+    snsLinePlot.set_xlabel("CountSteps")
+    snsLinePlot.set_ylabel(nameImage)
+    snsLinePlot.set_title('Average Time Process Per Publisher')
+    snsLinePlot.legend(loc='center right', bbox_to_anchor=(1.25, 0.5), ncol=1, title='Process')
+
+    snsLinePlot.figure.savefig('../data/graphics/subscriber/lineChart_'+nameImage+'.png')
     plt.clf()
 
-def transform_data_for_graph():
-    print(metricAvg)
-    cpuTimeArray = []
-    cpuTimePIDArray = []
-    memVirtualArray = []
-    memInfoArray = []
-    diskUsageArray = []
-
-    for metric in metricAvg :
-        if len(metricAvg[metric]) != 0 :
-            metricAvg[metric] = statistics.mean(metricAvg[metric])
-                    
-    fibonacci = ['8','13','21','34','55']
-    for i in range(5):
-        i = str(i)
-        cpuTimeArray.append(metricAvg['cpuTimeAvg_ax'+i])
-        cpuTimePIDArray.append(metricAvg['cpuTimePIDAvg_ax'+i])
-        memVirtualArray.append(metricAvg['memVirtualAvg_ax'+i])
-        memInfoArray.append(metricAvg['memInfoAvg_ax'+i])
-        diskUsageArray.append(metricAvg['diskUsageAvg_ax'+i])
-
-    return fibonacci,cpuTimeArray,cpuTimePIDArray,memInfoArray,memVirtualArray,diskUsageArray
+def transform_data_for_graph(dfMetricsProcesses):
+    # Average of all values pivoting qtyloop as  the main metric for each process
+    dfMetricsProcessesAvg = dfMetricsProcesses.groupby(['CountSteps','QtyTopic'],as_index=False).mean()
+        
+    # Create csv file with all values
+    dfMetricsProcessesAvg.to_csv(r'../data/csv/subscriber/MetricsProcessesAvg.csv',index=False)
+    dfMetricsProcesses.to_csv(r'../data/csv/subscriber/MetricsProcesses.csv',index=False)
     
-def create_graph():
-    fibonacci,cpuTimeArray,cpuTimePIDArray,memInfoArray,memVirtualArray,diskUsageArray = transform_data_for_graph()
+    # Splitting dataframe by metric name
+    # dfCpuTimeAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','CpuTime']]
+    dfCpuTimePIDAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','CpuTimePID']]
+    dfDiskUsageAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','DiskUsage']]
+    dfMemInfoAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','MemInfo']]
+    # dfMemVirtualAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','MemVirtual']]
     
-    line_chart(fibonacci, cpuTimeArray, 'cpuTime')
-    line_chart(fibonacci, cpuTimePIDArray, 'cpuTimePID')
-    line_chart(fibonacci, memInfoArray, 'memVirtual')
-    line_chart(fibonacci, memVirtualArray, 'memInfo')
-    line_chart(fibonacci, diskUsageArray, 'diskUsage')
+    # Writting dataframe's csv
+    # dfCpuTimeAvg.to_csv(r'../data/csv/subscriber/CpuTimeAvg.csv',index=False)
+    dfCpuTimePIDAvg.to_csv(r'../data/csv/subscriber/CpuTimePIDAvg.csv',index=False)
+    dfDiskUsageAvg.to_csv(r'../data/csv/subscriber/DiskUsageAvg.csv',index=False)
+    dfMemInfoAvg.to_csv(r'../data/csv/subscriber/MemInfoAvg.csv',index=False)
+    # dfMemVirtualAvg.to_csv(r'../data/csv/subscriber/MemVirtualAvg.csv',index=False)
+  
+    return dfMetricsProcessesAvg,  dfCpuTimePIDAvg,  dfMemInfoAvg, dfDiskUsageAvg
+    
+def create_graph_csv(dfMetricsProcesses):
+    dfMetricsProcessesAvg,  dfCpuTimePIDAvg,  dfMemInfoAvg, dfDiskUsageAvg = transform_data_for_graph(dfMetricsProcesses)
+
+    # line_chart(dfCpuTimeAvg, 'CpuTime')
+    line_chart( dfCpuTimePIDAvg, 'CpuTimePID')
+    line_chart( dfDiskUsageAvg, 'DiskUsage')
+    line_chart( dfMemInfoAvg, 'MemInfo')
+    # line_chart( dfMemVirtualAvg, 'MemVirtual')
+
+def new_line_chart(df, nameImage):
+    plt.clf()
+    sns.set(style = "whitegrid")
+    snsLinePlot = sns.lineplot(x="CountSteps", y=nameImage,markers=["o", "o","o","o","o"], 
+                                hue='ProcessNumber', style="ProcessNumber",legend="full",palette=["C0", "C1", "C2", "C3","C4"],data=df)
+
+    snsLinePlot.set_xlabel("CountSteps")
+    snsLinePlot.set_ylabel(nameImage)
+    snsLinePlot.set_title('Average Time Process Per Publisher')
+    snsLinePlot.legend(loc='center right', bbox_to_anchor=(1.25, 0.5), ncol=1, title='Process')
+
+    snsLinePlot.figure.savefig('../data/graphics/subscriber/lineChart_'+nameImage+'.png')
+    plt.clf()
+
+def new_transform_data_for_graph(dfMetricsProcesses):
+    # Average of all values pivoting qtyloop as  the main metric for each process
+    dfMetricsProcessesAvg = dfMetricsProcesses.groupby(['CountSteps','ProcessNumber'],as_index=False).mean()
+        
+    # Create csv file with all values
+    dfMetricsProcessesAvg.to_csv(r'../data/csv/subscriber/MetricsProcessesAvg.csv',index=False)
+    dfMetricsProcesses.to_csv(r'../data/csv/subscriber/MetricsProcesses.csv',index=False)
+    
+    # Splitting dataframe by metric name
+    # dfCpuTimeAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','CpuTime']]
+    dfCpuTimePIDAvg = dfMetricsProcessesAvg[['CountSteps','ProcessNumber','CpuTimePID']]
+    dfDiskUsageAvg = dfMetricsProcessesAvg[['CountSteps','ProcessNumber','DiskUsage']]
+    dfMemInfoAvg = dfMetricsProcessesAvg[['CountSteps','ProcessNumber','MemInfo']]
+    # dfMemVirtualAvg = dfMetricsProcessesAvg[['CountSteps','QtyTopic','MemVirtual']]
+    
+    # # Writting dataframe's csv
+    # dfCpuTimeAvg.to_csv(r'../data/csv/subscriber/CpuTimeAvg.csv',index=False)
+    dfCpuTimePIDAvg.to_csv(r'../data/csv/subscriber/CpuTimePIDAvg.csv',index=False)
+    dfDiskUsageAvg.to_csv(r'../data/csv/subscriber/DiskUsageAvg.csv',index=False)
+    dfMemInfoAvg.to_csv(r'../data/csv/subscriber/MemInfoAvg.csv',index=False)
+    # dfMemVirtualAvg.to_csv(r'../data/csv/subscriber/MemVirtualAvg.csv',index=False)
+  
+    return dfMetricsProcessesAvg,  dfCpuTimePIDAvg, dfMemInfoAvg, dfDiskUsageAvg
+    
+def new_create_graph_csv(dfMetricsProcesses):
+    dfMetricsProcessesAvg,  dfCpuTimePIDAvg,  dfMemInfoAvg, dfDiskUsageAvg = transform_data_for_graph(dfMetricsProcesses)
+    # line_chart(dfCpuTimeAvg, 'CpuTime')
+    line_chart( dfCpuTimePIDAvg, 'CpuTimePID')
+    line_chart( dfDiskUsageAvg, 'DiskUsage')
+    line_chart( dfMemInfoAvg, 'MemInfo')
+    print("\nACABOUU")
+    # line_chart( dfMemVirtualAvg, 'MemVirtual')
+
 
 # Read config file that are argurments to modify some parts of the code by the user
 def Read_Config_File(args):
