@@ -2,8 +2,7 @@
     "publisher":{
         "hostIP": "172.17.0.1",
         "port": 1883,  
-        "keepAlive": 60,
-        "qtyPublishers":5
+        "keepAlive": 60
     },
     "subscriber":{
         "hostIP": "172.17.0.1",

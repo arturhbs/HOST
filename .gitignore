@@ -4,4 +4,11 @@ data/csv/publisher/*
 data/csv/subscriber/*
 data/graphics/publisher/*
 data/graphics/subscriber/*
+
+# Get empty folder for push
+!data/csv/publisher/.gitignore
+!data/csv/subscriber/.gitignore
+!data/graphics/publisher/.gitignore
+!data/graphics/subscriber/.gitignore
+
 deleteAllData.sh
