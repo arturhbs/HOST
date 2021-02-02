@@ -7,7 +7,7 @@ data/graphics/subscriber/*
 
 # Get empty folder for push
 !data/csv/publisher/.gitignore
-!data/csv/subscriber/.giitgnore
+!data/csv/subscriber/.gitignore
 !data/graphics/publisher/.gitignore
 !data/graphics/subscriber/.gitignore
 
