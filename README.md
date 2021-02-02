@@ -7,12 +7,7 @@ Create a MQTT with subscribers and publishers that can communicate using Mosquit
 ## How to get it work
 Some steps you need to follow to get it worked 
 
-### 1- Get docker image
-```
-$ docker pull arturhbs/mqtt-python:latest
-```
-
-### 2- Get code source
+### 1- Get code source
 
 ```
 $ git clone https://github.com/arturhbs/MQTT-python.git
@@ -21,7 +16,7 @@ $ git clone https://github.com/arturhbs/MQTT-python.git
 $ cd MQTT-python
 ```
 
-### 3- Running code with docker 
+### 2- Running code with docker 
 Execute commands below to run publish's and subscribe's code, respectively:
 
 ```
