@@ -1,4 +1,4 @@
-# MQTT-python
+# HOST
 
 ## Introduction
 This work proposes HOST – a solution that addresses the problems of data heterogeneity and the interoperability of smart objects in the context of a smart home. HOST was modeled to compose a set of intelligent objects to form a computational infrastructure in fog.
