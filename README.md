@@ -11,6 +11,11 @@ This work proposes HOST – a solution that addresses the problems of data heter
 ## How to get it work
 Some steps you need to follow to get it worked 
 
+### 0- Requirements
+- Docker 20.10.2
+- Docker-compose 1.25
+- MQTT Paho Eclipse
+
 ### 1- Get code source
 
 ```
