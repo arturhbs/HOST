@@ -1,9 +1,9 @@
-# HOST
+# HOsT
 
 ## Introduction
-This work proposes HOST – a solution that addresses the problems of data heterogeneity and the interoperability of smart objects in the context of a smart home. HOST was modeled to compose a set of intelligent objects to form a computational infrastructure in fog.
+This work proposes HOsT – a solution that addresses the problems of data heterogeneity and the interoperability of smart objects in the context of a smart home. HOsT was modeled to compose a set of intelligent objects to form a computational infrastructure in fog.
 
- To disseminate heterogeneous information, a Publish/Subscribe communication module was implemented to abstract the details of communication between objects. A performance evaluation was carried out to validate HOST. The results show evidence of efficiency (i) in the computational resources of the devices; and (ii) in the communication infrastructure. Also, HOST provides scalability about the number of devices acting simultaneously, in addition to demonstrating its ability to work with different types of devices.
+ To disseminate heterogeneous information, a Publish/Subscribe communication module was implemented to abstract the details of communication between objects. A performance evaluation was carried out to validate HOsT. The results show evidence of efficiency (i) in the computational resources of the devices; and (ii) in the communication infrastructure. Also, HOsT provides scalability about the number of devices acting simultaneously, in addition to demonstrating its ability to work with different types of devices.
 
 
 
@@ -19,14 +19,14 @@ Some steps you need to follow to get it worked
 ### 1- Get code source
 
 ```
-$ git clone https://github.com/arturhbs/HOST.git
+$ git clone https://github.com/arturhbs/HOsT.git
 ```
 ```
-$ cd HOST
+$ cd HOsT
 ```
 
 ### 2- Running code with docker 
-Execute commands below to run publish's and subscribe's code, respectively:
+Execute commands below to run publish and subscribe code, respectively:
 
 ```
 $ docker-compose up -d --scale publisher=5 --scale subscriber=2
