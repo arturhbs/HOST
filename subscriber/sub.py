@@ -1,7 +1,7 @@
 import sys
 import time
 import json
-import paho.mqtt.client as mqtt
+import paho.mqtt.client as mqtt # version 1.6.1
 import matplotlib.pyplot as plt
 import numpy as np
 import statistics
